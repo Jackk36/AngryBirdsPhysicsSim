@@ -4,7 +4,7 @@ import pymunk.pygame_util
 
 # Initialize Pygame and Pymunk
 pygame.init()
-screen = pygame.display.set_mode((800, 600))
+screen = pygame.display.set_mode((1000, 600))
 pygame.display.set_caption("Angry Birds in Python")
 clock = pygame.time.Clock()
 space = pymunk.Space()
@@ -13,12 +13,15 @@ space.gravity = (0, 900)
 # Draw options
 draw_options = pymunk.pygame_util.DrawOptions(screen)
 
+slingshot_pos = (100, 590)  # Starting point of the bird (slingshot center)
+max_drag_distance = 50     # Max distance allowed for dragging (circle radius)
+
 # Create ground and bird
 def create_ground():
     body = pymunk.Body(body_type=pymunk.Body.STATIC)
-    body.position = (400, 590)
-    shape = pymunk.Segment(body, (-400, 0), (400, 0), 5)
-    shape.elasticity = 0.4
+    body.position = (400, 600)
+    shape = pymunk.Segment(body, (-400, 0), (600, 0), 5)
+    shape.elasticity = 0.0
     space.add(body, shape)
 def create_bird(x, y):
     mass = 1
@@ -28,45 +31,83 @@ def create_bird(x, y):
     bird_body.position = (x, y)
     bird_shape = pymunk.Circle(bird_body, radius)
     bird_shape.elasticity = 0.8
+    bird_shape.friction = 1.0
     space.add(bird_body, bird_shape)
     return bird_body
-def slingshot_box(x):
-    body = pymunk.Body(body_type=pymunk.Body.STATIC)
-    body.position = (100, 400) #kjhgf
-    shape = pymunk.Segment(body, (x, 0), (x+100, 0), 5)
-    shape2 = pymunk.Segment(body, (x+100, 0), (x+100, 100), 5)
-    shape3 = pymunk.Segment(body, (x, 100), (x+100, 100), 5)
-    shape4 = pymunk.Segment(body, (x, 100), (x, 0), 5)
 
+def blocks(x, y, width, height):
+    mass = 0.1
+    inertia = pymunk.moment_for_box(mass, (width, height))
 
+    # Create the body
+    block_body = pymunk.Body(mass, inertia)
+    block_body.position = (x, y)
 
-    space.add(body, shape, shape2, shape3, shape4)
+    # Define the box shape with vertices relative to the center of the block
+    half_width = width / 2
+    half_height = height / 2
+    vertices = [
+        (-half_width, -half_height),  # Bottom-left corner
+        (half_width, -half_height),  # Bottom-right corner
+        (half_width, half_height),  # Top-right corner
+        (-half_width, half_height)  # Top-left corner
+    ]
+
+    # Create the shape using these relative vertices
+    block_shape = pymunk.Poly(block_body, vertices)
+    block_shape.elasticity = 0.0
+    block_shape.friction = 1.0
+
+    # Add the body and shape to the space
+    space.add(block_body, block_shape)
+
+    return block_body
+
 
 create_ground()
-bird = create_bird(100,500)
-slingshot_box(10)
+bird = create_bird(*slingshot_pos)
+blocks(400,400, 50, 75)
+blocks(450,400, 50, 75)
+blocks(500,400, 50, 75)
+
+blocks(425,320, 50, 75)
+blocks(475,320, 50, 75)
+
+blocks(450,245, 50, 75)
 
 # Main game loop
 running = True
 dragging = False
-launch_power = 20
+launch_power = 10
 
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if bird.position.get_distance(pygame.mouse.get_pos()) < 20:
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = pygame.mouse.get_pos()
+            if bird.position.get_distance(mouse_pos) < 20:
                 dragging = True
-        if event.type == pygame.MOUSEBUTTONUP:
+                bird.velocity = (0, 0)  # Stop any falling during drag
+        elif event.type == pygame.MOUSEBUTTONUP:
             if dragging:
                 mouse_pos = pygame.mouse.get_pos()
-                launch_velocity = (bird.position - mouse_pos) * -launch_power
+                launch_velocity = (bird.position - mouse_pos) * launch_power
                 bird.velocity = launch_velocity
                 dragging = False
     if dragging:
-        position_x, position_y = bird.position
-        bird.position = pygame.mouse.get_pos()
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+
+        # Calculate the vector from the slingshot to the mouse
+        drag_vector = pymunk.Vec2d(mouse_x, mouse_y) - slingshot_pos
+
+        # If the distance is greater than the max_drag_distance, restrict it
+        if drag_vector.length > max_drag_distance:
+            drag_vector = drag_vector.normalized() * max_drag_distance
+
+        # Set the bird's position based on the restricted drag vector
+        bird.position = slingshot_pos + drag_vector
+        bird.velocity = (0, 0)
 
 
     # Update physics
