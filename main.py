@@ -20,7 +20,7 @@ BIRD_COLLISION_TYPE = 1
 BLOCK_COLLISION_TYPE = 2
 GROUND_COLLISION_TYPE = 3
 
-slingshot_pos = (100, 600)  # Starting point of the bird (slingshot center)
+slingshot_pos = (120, 600)  # Starting point of the bird (slingshot center)
 max_drag_distance = 100     # Max distance allowed for dragging (circle radius)
 
 # Create the ground as a static rectangle
@@ -30,6 +30,7 @@ ground_body.position = (600, 780)  # Center of the screen horizontally, near the
 # Create the rectangular shape for the ground
 ground_shape = pymunk.Poly.create_box(ground_body, (1200, 70))  # Width: 600, Height: 70
 ground_shape.friction = 0.5
+ground_shape.collision_type = GROUND_COLLISION_TYPE
 space.add(ground_body, ground_shape)
 
 # Function to draw the floor with a custom color
@@ -115,7 +116,7 @@ def draw_slingshot(screen):
     pygame.draw.line(screen, shadow_color, (105, 720), (105, 750), 2)  # Grain on the right side of the base
 
 def blocks(x, y, width, height):
-    mass = 0.1
+    mass = 0.6
     inertia = pymunk.moment_for_box(mass, (width, height))
 
     # Create the body
@@ -149,8 +150,11 @@ def handle_bird_block_collision(arbiter, space, data):
     """Callback function to handle bird-block collision."""
     block_shape = arbiter.shapes[1]  # The block is the second shape in the collision pair
 
+    velocity_threshold = 100  # A threshold velocity to consider the block as falling
+
     # Remove the block's body and shape from the space
-    space.remove(block_shape, block_shape.body)
+    if bird.velocity.y > velocity_threshold:
+        space.remove(block_shape, block_shape.body)
 
     return True  # Continue with the normal collision processing
 def handle_block_ground_collision(arbiter, space, data):
@@ -159,12 +163,33 @@ def handle_block_ground_collision(arbiter, space, data):
 
     # Check if the block is falling
     falling_threshold = 200  # A threshold velocity to consider the block as falling
-    print(block_body.velocity.y)
     if block_body.velocity.y > falling_threshold:
         # The block is falling, so remove it from the space
         space.remove(block_shape, block_shape.body)
 
     return True
+def handle_block_block_collision(arbiter, space, data):
+    """Callback function to handle block-block collision."""
+    block_shape_1 = arbiter.shapes[0]  # The first block in the collision pair
+    block_shape_2 = arbiter.shapes[1]  # The second block in the collision pair
+
+    block_body_1 = block_shape_1.body
+    block_body_2 = block_shape_2.body
+
+    # Check if either block is falling with high velocity
+    falling_threshold = 400  # A threshold velocity to consider a block falling
+
+    if block_body_1.velocity.y > falling_threshold:
+        # The first block breaks, so remove it from the space
+        space.remove(block_shape_1, block_body_1)
+
+    # Check if the second block is falling or rotating too fast
+    elif block_body_2.velocity.y > falling_threshold:
+        # The second block breaks, so remove it from the space
+        space.remove(block_shape_2, block_body_2)
+
+    return True  # Continue with the normal collision processing
+
 
 
 def draw_trajectory(surface, bird_body, drag_vector, steps=10, step_size=0.1):
@@ -202,17 +227,17 @@ def draw_rubber_band(screen, bird_pos, dragging):
 
 bird = create_bird(*slingshot_pos)
 
-blocks(800,750, 50, 75) #leg 1
-blocks(900,750, 50, 75) #leg 2
+blocks(800,760, 50, 75) #leg 1
+blocks(900,760, 50, 75) #leg 2
 
-blocks(800, 675, 100, 50) #top part 1
-blocks(900, 675, 100, 50) #top part 2
+blocks(800, 685, 100, 50) #top part 1
+blocks(900, 685, 100, 50) #top part 2
 
-blocks(800,525, 50, 75) #leg 3
-blocks(900,525, 50, 75) #leg 4
+blocks(800,535, 50, 75) #leg 3
+blocks(900,535, 50, 75) #leg 4
 
-blocks(800, 450, 100, 50) #top part 3
-blocks(900, 450, 100, 50) #top part 4
+blocks(800, 460, 100, 50) #top part 3
+blocks(900, 460, 100, 50) #top part 4
 
 
 # Add a collision handler for bird-block collisions
@@ -221,6 +246,11 @@ collision_handler.begin = handle_bird_block_collision  # Set the callback
 
 block_ground_collision_handler = space.add_collision_handler(GROUND_COLLISION_TYPE, BLOCK_COLLISION_TYPE)
 block_ground_collision_handler.begin = handle_block_ground_collision  # Set the callback
+
+# Add a collision handler for block-block collisions
+block_block_collision_handler = space.add_collision_handler(BLOCK_COLLISION_TYPE, BLOCK_COLLISION_TYPE)
+block_block_collision_handler.begin = handle_block_block_collision  # Set the callback
+
 
 # Define rubber band attachment points on the slingshot
 left_band_anchor = (65, 620)  # Left side of the slingshot
