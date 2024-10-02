@@ -159,6 +159,7 @@ def handle_block_ground_collision(arbiter, space, data):
 
     # Check if the block is falling
     falling_threshold = 200  # A threshold velocity to consider the block as falling
+    print(block_body.velocity.y)
     if block_body.velocity.y > falling_threshold:
         # The block is falling, so remove it from the space
         space.remove(block_shape, block_shape.body)
@@ -186,20 +187,32 @@ def draw_trajectory(surface, bird_body, drag_vector, steps=10, step_size=0.1):
 
         # Draw trajectory dots if within screen bounds
         pygame.draw.circle(surface, (255, 0, 0), future_pos_screen, 5)
+def draw_rubber_band(screen, bird_pos, dragging):
+    rubber_band_color = (50, 30, 30)  # Dark brown for the rubber band
+    rubber_band_thickness = 8
+
+    # Draw the rubber band only if the bird is being dragged
+    if not bird_launched:
+        # Left rubber band
+        pygame.draw.line(screen, rubber_band_color, left_band_anchor, bird_pos, rubber_band_thickness)
+        #Right rubber band
+        pygame.draw.line(screen, rubber_band_color, right_band_anchor, bird_pos, rubber_band_thickness)
+
+
 
 bird = create_bird(*slingshot_pos)
 
-blocks(400,550, 50, 75) #leg 1
-blocks(500,550, 50, 75) #leg 2
+blocks(800,750, 50, 75) #leg 1
+blocks(900,750, 50, 75) #leg 2
 
-blocks(400, 475, 100, 50) #top part 1
-blocks(500, 475, 100, 50) #top part 2
+blocks(800, 675, 100, 50) #top part 1
+blocks(900, 675, 100, 50) #top part 2
 
-blocks(400,425, 50, 75) #leg 3
-blocks(500,425, 50, 75) #leg 4
+blocks(800,525, 50, 75) #leg 3
+blocks(900,525, 50, 75) #leg 4
 
-blocks(400, 350, 100, 50) #top part 3
-blocks(500, 350, 100, 50) #top part 4
+blocks(800, 450, 100, 50) #top part 3
+blocks(900, 450, 100, 50) #top part 4
 
 
 # Add a collision handler for bird-block collisions
@@ -214,22 +227,11 @@ left_band_anchor = (65, 620)  # Left side of the slingshot
 right_band_anchor = (135, 620)  # Right side of the slingshot
 
 # Function to draw the rubber band of the slingshot
-def draw_rubber_band(screen, bird_pos, dragging):
-    rubber_band_color = (50, 30, 30)  # Dark brown for the rubber band
-    rubber_band_thickness = 8
-
-    # Draw the rubber band only if the bird is being dragged
-    if not bird_launched:
-        # Left rubber band
-        pygame.draw.line(screen, rubber_band_color, left_band_anchor, bird_pos, rubber_band_thickness)
-        #Right rubber band
-        pygame.draw.line(screen, rubber_band_color, right_band_anchor, bird_pos, rubber_band_thickness)
-
 
 # Main loop
 running = True
 dragging = False
-launch_power = 50
+launch_power = 100
 initial_mouse_pos = None  # Store initial click position
 bird_launched = False  # Track whether the bird has been launched
 while running:
