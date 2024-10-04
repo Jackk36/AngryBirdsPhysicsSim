@@ -20,7 +20,7 @@ BIRD_COLLISION_TYPE = 1
 BLOCK_COLLISION_TYPE = 2
 GROUND_COLLISION_TYPE = 3
 
-slingshot_pos = (120, 600)  # Starting point of the bird (slingshot center)
+slingshot_pos = (100, 600)  # Starting point of the bird (slingshot center)
 max_drag_distance = 100     # Max distance allowed for dragging (circle radius)
 
 # Create the ground as a static rectangle
@@ -116,7 +116,7 @@ def draw_slingshot(screen):
     pygame.draw.line(screen, shadow_color, (105, 720), (105, 750), 2)  # Grain on the right side of the base
 
 def blocks(x, y, width, height):
-    mass = 0.6
+    mass = 1.0
     inertia = pymunk.moment_for_box(mass, (width, height))
 
     # Create the body
@@ -150,7 +150,7 @@ def handle_bird_block_collision(arbiter, space, data):
     """Callback function to handle bird-block collision."""
     block_shape = arbiter.shapes[1]  # The block is the second shape in the collision pair
 
-    velocity_threshold = 100  # A threshold velocity to consider the block as falling
+    velocity_threshold = 200  # A threshold velocity to consider the block as falling
 
     # Remove the block's body and shape from the space
     if bird.velocity.y > velocity_threshold:
