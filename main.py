@@ -3,6 +3,7 @@ import pymunk
 import pymunk.pygame_util
 import math
 
+
 # Initialize pygame
 pygame.init()
 
@@ -10,6 +11,11 @@ pygame.init()
 screen = pygame.display.set_mode((1200, 800))
 clock = pygame.time.Clock()
 draw_options = pymunk.pygame_util.DrawOptions(screen)
+
+bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdImage.png")  # Path to your uploaded image
+bird_rect = bird_image.get_rect()
+
+hit_bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdHit.png")
 
 # Set up the space
 space = pymunk.Space()
@@ -54,6 +60,20 @@ def draw_grass(screen, y, ground_shape, color):
                            (x + 20, y + ground_top - 5 * (5 + 3 * n))]
             pygame.draw.polygon(screen, color, grass_blade)
 
+# Function to draw the bird image
+def draw_bird(screen, bird_body):
+    bird_position = bird_body.position
+    bird_angle_degrees = math.degrees(bird_body.angle)  # Convert angle to degrees for Pygame
+
+    # Rotate the bird image based on the bird's angle
+    rotated_bird_image = pygame.transform.rotate(bird_image,
+                                                 -bird_angle_degrees)  # Rotate image (negative for correct direction)
+
+    # Update the rectangle to keep the image centered on the bird's position
+    rotated_rect = rotated_bird_image.get_rect(center=(bird_position.x-5, bird_position.y))
+
+    # Blit the rotated image at the updated position
+    screen.blit(rotated_bird_image, rotated_rect.topleft)
 
 # Function to create the bird
 def create_bird(x, y):
@@ -156,6 +176,16 @@ def handle_bird_block_collision(arbiter, space, data):
     if bird.velocity.y > velocity_threshold:
         space.remove(block_shape, block_shape.body)
 
+    # Collision handler to detect bird hitting block
+    def bird_hit_block(arbiter, space, data):
+        global bird_image  # Modify global bird_image when the collision occurs
+        bird_image = hit_bird_image  # Change bird's image to the new one
+        return True  # Return True to process the collision
+
+    # Add the collision handler
+    handler = space.add_collision_handler(BIRD_COLLISION_TYPE, BLOCK_COLLISION_TYPE)
+    handler.post_solve = bird_hit_block  # Call bird_hit_block function when collision occurs
+
     return True  # Continue with the normal collision processing
 def handle_block_ground_collision(arbiter, space, data):
     block_shape = arbiter.shapes[1]
@@ -223,21 +253,19 @@ def draw_rubber_band(screen, bird_pos, dragging):
         #Right rubber band
         pygame.draw.line(screen, rubber_band_color, right_band_anchor, bird_pos, rubber_band_thickness)
 
-
-
 bird = create_bird(*slingshot_pos)
 
-blocks(800,760, 50, 75) #leg 1
-blocks(900,760, 50, 75) #leg 2
+blocks(800, 730, 50, 75)
+blocks(900, 730, 50, 75)
 
-blocks(800, 685, 100, 50) #top part 1
-blocks(900, 685, 100, 50) #top part 2
+blocks(800, 685, 100, 50)
+blocks(900, 685, 100, 50)
 
-blocks(800,535, 50, 75) #leg 3
-blocks(900,535, 50, 75) #leg 4
+blocks(800,535, 50, 75)
+blocks(900,535, 50, 75)
 
-blocks(800, 460, 100, 50) #top part 3
-blocks(900, 460, 100, 50) #top part 4
+blocks(800, 460, 100, 50)
+blocks(900, 460, 100, 50)
 
 
 # Add a collision handler for bird-block collisions
@@ -290,6 +318,7 @@ while running:
                 dragging = False
                 bird_launched = True  # Set bird as launched after release
                 initial_mouse_pos = None  # Store initial click position
+                bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdFlying1.png")  # Path to your uploaded image
 
     # Keep the bird floating until launched
     if not bird_launched and not dragging:
@@ -301,6 +330,7 @@ while running:
     # Update physics
     space.step(1 / 50.0)  # Simulate physics with a fixed time step
     space.debug_draw(draw_options)
+
     # Update the bird's position while dragging
     if dragging:
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -332,6 +362,8 @@ while running:
     draw_slingshot(screen)
 
     draw_rubber_band(screen, bird.position, dragging)
+
+    draw_bird(screen, bird)
 
     pygame.display.flip()
     clock.tick(50)

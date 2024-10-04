@@ -155,7 +155,7 @@ block_ground_collision_handler.begin = handle_block_ground_collision  # Set the 
 # Main game loop
 running = True
 dragging = False
-launch_power = 50
+launch_power = 100
 initial_mouse_pos = None  # Store initial click position
 bird_launched = False  # Track whether the bird has been launched
 
