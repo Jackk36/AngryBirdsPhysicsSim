@@ -3,7 +3,6 @@ import pymunk
 import pymunk.pygame_util
 import math
 
-
 # Initialize pygame
 pygame.init()
 
@@ -34,7 +33,7 @@ ground_body = pymunk.Body(body_type=pymunk.Body.STATIC)  # Static body
 ground_body.position = (600, 780)  # Center of the screen horizontally, near the bottom
 
 # Create the rectangular shape for the ground
-ground_shape = pymunk.Poly.create_box(ground_body, (1200, 70))  # Width: 600, Height: 70
+ground_shape = pymunk.Poly.create_box(ground_body, (2200, 70))  # Width: 600, Height: 70
 ground_shape.friction = 0.5
 ground_shape.collision_type = GROUND_COLLISION_TYPE
 space.add(ground_body, ground_shape)
@@ -90,11 +89,10 @@ def create_bird(x, y):
     space.add(bird_body, bird_shape)
     return bird_body
 
-
 # Function to draw the sun with a smile and rays
 def draw_sun(screen):
     sun_color = (255, 223, 0)  # Yellow
-    sun_center = (1000, 200)  # Position of the sun
+    sun_center = (1100, 100)  # Position of the sun
     sun_radius = 50  # Size of the sun
 
     # Draw rays around the sun
@@ -109,13 +107,12 @@ def draw_sun(screen):
 
     # Draw the eyes (two small circles)
     eye_color = (0, 0, 0)  # Black
-    pygame.draw.circle(screen, eye_color, (960, 170), 7)  # Left eye
-    pygame.draw.circle(screen, eye_color, (1040, 170), 7)  # Right eye
+    pygame.draw.circle(screen, eye_color, (1060, 70), 7)  # Left eye
+    pygame.draw.circle(screen, eye_color, (1140, 70), 7)  # Right eye
 
     # Draw the smiling mouth (arc)
     mouth_color = (0, 0, 0)  # Black
-    pygame.draw.arc(screen, mouth_color, [980, 180, 60, 40], 3.14, 0, 3)  # Draw the smile (arc)
-
+    pygame.draw.arc(screen, mouth_color, [1080, 80, 60, 40], 3.14, 0, 3)  # Draw the smile (arc)
 
 # Function to draw the wooden slingshot with more detail
 def draw_slingshot(screen):
