@@ -11,10 +11,21 @@ screen = pygame.display.set_mode((1200, 800))
 clock = pygame.time.Clock()
 draw_options = pymunk.pygame_util.DrawOptions(screen)
 
+# image loading stuff
 bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdImage.png")  # Path to your uploaded image
 bird_rect = bird_image.get_rect()
 
 hit_bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdHit.png")
+
+medium_block = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/"
+                                 "MedBlock.png")
+medium_block = pygame.transform.scale(medium_block, (100,50))
+medium_block_hit_1 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/"
+                                 "MedBlockHit1.png")
+medium_block_hit_2 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/"
+                                 "MedBlockHit2.png")
+medium_block_hit_3 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/"
+                                 "MedBlockHit3.png")
 
 # Set up the space
 space = pymunk.Space()
@@ -38,14 +49,11 @@ ground_shape.friction = 0.5
 ground_shape.collision_type = GROUND_COLLISION_TYPE
 space.add(ground_body, ground_shape)
 
-# Function to draw the floor with a custom color
 def draw_floor(screen, ground_shape):
     floor_color = (20, 200, 20)  # Custom color (green in this case)
     vertices = ground_shape.get_vertices()  # Get the vertices of the ground
     points = [(v.x + ground_body.position.x, v.y + ground_body.position.y) for v in vertices]
     pygame.draw.polygon(screen, floor_color, points)  # Draw the floor polygon
-
-# Function to draw pointy grass
 def draw_grass(screen, y, ground_shape, color):
     ground_top = 790  # Fixed y-coordinate for the top of the ground
     # Loop to draw grass blades across the top of the ground
@@ -58,8 +66,6 @@ def draw_grass(screen, y, ground_shape, color):
             grass_blade = [(x, y + ground_top - (5 + 3 * n)), (x + 10, y + ground_top - 3 * n),
                            (x + 20, y + ground_top - 5 * (5 + 3 * n))]
             pygame.draw.polygon(screen, color, grass_blade)
-
-# Function to draw the bird image
 def draw_bird(screen, bird_body):
     bird_position = bird_body.position
     bird_angle_degrees = math.degrees(bird_body.angle)  # Convert angle to degrees for Pygame
@@ -73,8 +79,6 @@ def draw_bird(screen, bird_body):
 
     # Blit the rotated image at the updated position
     screen.blit(rotated_bird_image, rotated_rect.topleft)
-
-# Function to create the bird
 def create_bird(x, y):
     mass = 1
     radius = 15
@@ -88,8 +92,6 @@ def create_bird(x, y):
     bird_body.velocity = (0,0)
     space.add(bird_body, bird_shape)
     return bird_body
-
-# Function to draw the sun with a smile and rays
 def draw_sun(screen):
     sun_color = (255, 223, 0)  # Yellow
     sun_center = (1100, 100)  # Position of the sun
@@ -113,8 +115,6 @@ def draw_sun(screen):
     # Draw the smiling mouth (arc)
     mouth_color = (0, 0, 0)  # Black
     pygame.draw.arc(screen, mouth_color, [1080, 80, 60, 40], 3.14, 0, 3)  # Draw the smile (arc)
-
-# Function to draw the wooden slingshot with more detail
 def draw_slingshot(screen):
     slingshot_color = (139, 69, 19)  # Brown color for the wood
     shadow_color = (115, 55, 17)  # Darker brown for shading
@@ -131,8 +131,7 @@ def draw_slingshot(screen):
     # Add wood grain effect (lines for details)
     pygame.draw.line(screen, shadow_color, (95, 720), (95, 750), 2)  # Grain on the left side of the base
     pygame.draw.line(screen, shadow_color, (105, 720), (105, 750), 2)  # Grain on the right side of the base
-
-def blocks(x, y, width, height):
+def blocks(x, y, width, height, is_intact, created):
     mass = 1.0
     inertia = pymunk.moment_for_box(mass, (width, height))
 
@@ -158,11 +157,32 @@ def blocks(x, y, width, height):
 
     block_body.velocity = (0,0)
 
+    block_body.width = width
+    block_body.height = height
+
+    block_body.is_intact = is_intact
+    block_body.created = created
     # Add the body and shape to the space
-    space.add(block_body, block_shape)
+    if created:
+        space.add(block_body, block_shape)
 
     return block_body
+def draw_blocks(screen, block_body):
+    if block_body.is_intact:
+        block_position = block_body.position
+        block_angle_degrees = math.degrees(block_body.angle)
 
+        # Determine whether to draw the block normally or rotated
+        if block_body.width > block_body.height:
+            # Draw normally
+            rotated_block_image = pygame.transform.rotate(medium_block, -block_angle_degrees)
+        else:
+            # Draw rotated 90 degrees
+            rotated_block_image = pygame.transform.rotate(medium_block, -block_angle_degrees + 90)
+
+        rotated_rect = rotated_block_image.get_rect(center=(block_position.x, block_position.y))
+
+        screen.blit(rotated_block_image, rotated_rect.topleft)
 def handle_bird_block_collision(arbiter, space, data):
     """Callback function to handle bird-block collision."""
     block_shape = arbiter.shapes[1]  # The block is the second shape in the collision pair
@@ -172,6 +192,7 @@ def handle_bird_block_collision(arbiter, space, data):
     # Remove the block's body and shape from the space
     if bird.velocity.y > velocity_threshold:
         space.remove(block_shape, block_shape.body)
+        block_shape.body.is_intact = False
 
     # Collision handler to detect bird hitting block
     def bird_hit_block(arbiter, space, data):
@@ -193,6 +214,7 @@ def handle_block_ground_collision(arbiter, space, data):
     if block_body.velocity.y > falling_threshold:
         # The block is falling, so remove it from the space
         space.remove(block_shape, block_shape.body)
+        block_body.is_intact = False
 
     return True
 def handle_block_block_collision(arbiter, space, data):
@@ -209,16 +231,15 @@ def handle_block_block_collision(arbiter, space, data):
     if block_body_1.velocity.y > falling_threshold:
         # The first block breaks, so remove it from the space
         space.remove(block_shape_1, block_body_1)
+        block_body_1.is_intact = False
 
     # Check if the second block is falling or rotating too fast
     elif block_body_2.velocity.y > falling_threshold:
         # The second block breaks, so remove it from the space
         space.remove(block_shape_2, block_body_2)
+        block_body_2.is_intact = False
 
     return True  # Continue with the normal collision processing
-
-
-
 def draw_trajectory(surface, bird_body, drag_vector, steps=10, step_size=0.1):
     """Draws the trajectory of the bird using small dots."""
     # Launch power based on drag
@@ -249,21 +270,31 @@ def draw_rubber_band(screen, bird_pos, dragging):
         pygame.draw.line(screen, rubber_band_color, left_band_anchor, bird_pos, rubber_band_thickness)
         #Right rubber band
         pygame.draw.line(screen, rubber_band_color, right_band_anchor, bird_pos, rubber_band_thickness)
+def level(block_list, levels):
+    if len(block_list) > 0:
+        return True
+    elif len(block_list) == 0:
+        levels.remove(block_list)
+        for block1 in levels[0]:
+            block1.created = True
 
 bird = create_bird(*slingshot_pos)
 
-blocks(800, 730, 50, 75)
-blocks(900, 730, 50, 75)
+block_list = [blocks(800, 730, 50, 100, True, True), blocks(900, 730, 50, 100, True, True), blocks(800, 685, 100, 50, True, True),
+              blocks(900, 685, 100, 50, True, True), blocks(800, 535, 50, 100, True, True), blocks(900, 535, 50, 100, True, True),
+              blocks(800, 460, 100, 50, True, True), blocks(900, 460, 100, 50, True, True)]
 
-blocks(800, 685, 100, 50)
-blocks(900, 685, 100, 50)
+block_list1 = [blocks(800, 340, 50, 100, True, False), blocks(900, 340, 50, 100, True, False), blocks(800, 730, 50, 100, True, False),
+               blocks(900, 730, 50, 100, True, False), blocks(800, 685, 100, 50, True, False), blocks(900, 685, 100, 50, True, False),
+               blocks(800, 535, 50, 100, True, False), blocks(900, 535, 50, 100, True, False), blocks(800, 460, 100, 50, True, False),
+               blocks(900, 460, 100, 50, True, False)]
 
-blocks(800,535, 50, 75)
-blocks(900,535, 50, 75)
+block_list2 = [blocks(800, 290, 100, 50, True, False), blocks(900, 290, 100, 50, True, False), blocks(800, 240, 50, 100, True, False),
+               blocks(900, 340, 50, 100, True, False), blocks(800, 730, 50, 100, True, False), blocks(900, 730, 50, 100, True, False),
+               blocks(800, 685, 100, 50, True, False), blocks(900, 685, 100, 50, True, False), blocks(800, 535, 50, 100, True, False),
+               blocks(900, 535, 50, 100, True, False), blocks(800, 460, 100, 50, True, False), blocks(900, 460, 100, 50, True, False)]
 
-blocks(800, 460, 100, 50)
-blocks(900, 460, 100, 50)
-
+levels = [block_list, block_list1, block_list2]
 
 # Add a collision handler for bird-block collisions
 collision_handler = space.add_collision_handler(BIRD_COLLISION_TYPE, BLOCK_COLLISION_TYPE)
@@ -293,6 +324,13 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_r:
+                dragging = False
+                launch_power = 100
+                initial_mouse_pos = None  # Store initial click position
+                bird_launched = False  # Track whether the bird has been launched
+                bird.position = slingshot_pos
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
             if bird.position.get_distance(mouse_pos) < 20 and not bird_launched:
@@ -361,6 +399,14 @@ while running:
     draw_rubber_band(screen, bird.position, dragging)
 
     draw_bird(screen, bird)
+
+    level(levels[0], levels)
+
+    for block in levels[0]:
+        if block.is_intact:
+            draw_blocks(screen, block)
+        elif not block.is_intact:
+            block_list.remove(block)
 
     pygame.display.flip()
     clock.tick(50)
