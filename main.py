@@ -162,6 +162,8 @@ def blocks(x, y, width, height, is_intact, created):
 
     block_body.is_intact = is_intact
     block_body.created = created
+    block_body.shape = block_shape
+
     # Add the body and shape to the space
     if created:
         space.add(block_body, block_shape)
@@ -275,8 +277,13 @@ def level(block_list, levels):
         return True
     elif len(block_list) == 0:
         levels.remove(block_list)
-        for block1 in levels[0]:
-            block1.created = True
+        if levels:
+            for block1 in levels[0]:
+                block1.created = True
+                space.add(block1, block1.shape)
+        else:
+            # No more levels, handle accordingly
+            print("Congratulations! You've completed all levels.")
 
 bird = create_bird(*slingshot_pos)
 
@@ -306,7 +313,6 @@ block_ground_collision_handler.begin = handle_block_ground_collision  # Set the 
 # Add a collision handler for block-block collisions
 block_block_collision_handler = space.add_collision_handler(BLOCK_COLLISION_TYPE, BLOCK_COLLISION_TYPE)
 block_block_collision_handler.begin = handle_block_block_collision  # Set the callback
-
 
 # Define rubber band attachment points on the slingshot
 left_band_anchor = (65, 620)  # Left side of the slingshot
@@ -402,11 +408,13 @@ while running:
 
     level(levels[0], levels)
 
-    for block in levels[0]:
+    # Use a copy of the list to avoid issues when removing items
+    for block in levels[0][:]:
         if block.is_intact:
             draw_blocks(screen, block)
-        elif not block.is_intact:
-            block_list.remove(block)
+        else:
+            levels[0].remove(block)
+
 
     pygame.display.flip()
     clock.tick(50)
