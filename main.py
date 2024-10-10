@@ -2,6 +2,11 @@ import pygame
 import pymunk
 import pymunk.pygame_util
 import math
+import tkinter
+from tkinter import *
+
+root = tkinter.Tk()
+
 
 # Initialize pygame
 pygame.init()
@@ -10,6 +15,10 @@ pygame.init()
 screen = pygame.display.set_mode((1200, 800))
 clock = pygame.time.Clock()
 draw_options = pymunk.pygame_util.DrawOptions(screen)
+
+root.title("Level Select")
+root.minsize(200, 200)  # width, height
+root.geometry("400x400")  # width x height + x + y
 
 # image loading stuff
 bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdImage.png")  # Path to your uploaded image
@@ -20,6 +29,8 @@ hit_bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBi
 medium_block = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/"
                                  "MedBlock.png")
 medium_block = pygame.transform.scale(medium_block, (100,50))
+
+# TODO add the thing where blocks have lives
 medium_block_hit_1 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/"
                                  "MedBlockHit1.png")
 medium_block_hit_2 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/"
@@ -31,13 +42,124 @@ medium_block_hit_3 = pygame.image.load("/Users/kevin_francis/PycharmProjects/Ang
 space = pymunk.Space()
 space.gravity = (0, 900)  # Gravity
 
+slingshot_pos = (100, 600)  # Starting point of the bird (slingshot center)
+max_drag_distance = 100     # Max distance allowed for dragging (circle radius)
+level_num = 0
+
 # Collision types
 BIRD_COLLISION_TYPE = 1
 BLOCK_COLLISION_TYPE = 2
 GROUND_COLLISION_TYPE = 3
 
-slingshot_pos = (100, 600)  # Starting point of the bird (slingshot center)
-max_drag_distance = 100     # Max distance allowed for dragging (circle radius)
+def load_level(levels, level_num1):
+    if levels:
+        for block1 in levels[level_num1-1]:
+            block1.created = True
+            space.add(block1, block1.shape)
+    else:
+        # No more levels, handle accordingly
+        print("Congratulations! You've completed all levels.")
+def blocks(x, y, width, height, is_intact, created):
+    mass = 1.0
+    inertia = pymunk.moment_for_box(mass, (width, height))
+
+    # Create the body
+    block_body = pymunk.Body(mass, inertia)
+    block_body.position = (x, y)
+
+    # Define the box shape with vertices relative to the center of the block
+    half_width = width / 2
+    half_height = height / 2
+    vertices = [
+        (-half_width, -half_height),  # Bottom-left corner
+        (half_width, -half_height),  # Bottom-right corner
+        (half_width, half_height),  # Top-right corner
+        (-half_width, half_height)  # Top-left corner
+    ]
+
+    # Create the shape using these relative vertices
+    block_shape = pymunk.Poly(block_body, vertices)
+    block_shape.elasticity = 0.0
+    block_shape.collision_type = BLOCK_COLLISION_TYPE  # Set block collision type
+    block_shape.friction = 1.0
+
+    block_body.velocity = (0,0)
+
+    block_body.width = width
+    block_body.height = height
+
+    block_body.is_intact = is_intact
+    block_body.created = created
+    block_body.shape = block_shape
+
+    # Add the body and shape to the space
+    if created:
+        space.add(block_body, block_shape)
+
+    return block_body
+def draw_blocks(screen, block_body):
+    if block_body.is_intact:
+        block_position = block_body.position
+        block_angle_degrees = math.degrees(block_body.angle)
+
+        # Determine whether to draw the block normally or rotated
+        if block_body.width > block_body.height:
+            # Draw normally
+            rotated_block_image = pygame.transform.rotate(medium_block, -block_angle_degrees)
+        else:
+            # Draw rotated 90 degrees
+            rotated_block_image = pygame.transform.rotate(medium_block, -block_angle_degrees + 90)
+
+        rotated_rect = rotated_block_image.get_rect(center=(block_position.x, block_position.y))
+
+        screen.blit(rotated_block_image, rotated_rect.topleft)
+
+block_list = [blocks(800, 730, 50, 100, True, False), blocks(900, 730, 50, 100, True, False), blocks(800, 685, 100, 50, True, False),
+              blocks(900, 685, 100, 50, True, False), blocks(800, 535, 50, 100, True, False), blocks(900, 535, 50, 100, True, False),
+              blocks(800, 460, 100, 50, True, False), blocks(900, 460, 100, 50, True, False)]
+
+block_list1 = [blocks(800, 340, 50, 100, True, False), blocks(900, 340, 50, 100, True, False), blocks(800, 730, 50, 100, True, False),
+               blocks(900, 730, 50, 100, True, False), blocks(800, 685, 100, 50, True, False), blocks(900, 685, 100, 50, True, False),
+               blocks(800, 535, 50, 100, True, False), blocks(900, 535, 50, 100, True, False), blocks(800, 460, 100, 50, True, False),
+               blocks(900, 460, 100, 50, True, False)]
+
+block_list2 = [blocks(800, 290, 100, 50, True, False), blocks(900, 290, 100, 50, True, False), blocks(800, 240, 50, 100, True, False),
+               blocks(900, 340, 50, 100, True, False), blocks(800, 730, 50, 100, True, False), blocks(900, 730, 50, 100, True, False),
+               blocks(800, 685, 100, 50, True, False), blocks(900, 685, 100, 50, True, False), blocks(800, 535, 50, 100, True, False),
+               blocks(900, 535, 50, 100, True, False), blocks(800, 460, 100, 50, True, False), blocks(900, 460, 100, 50, True, False)]
+
+levels = [block_list, block_list1, block_list2]
+
+def on_button_click1():
+    global level_num
+    level_num = 1
+    load_level(levels, level_num)
+    root.destroy()
+def on_button_click2():
+    global level_num
+    level_num = 2
+    load_level(levels, level_num)
+    root.destroy()
+def on_button_click3():
+    global level_num
+    level_num = 3
+    load_level(levels, level_num)
+    root.destroy()
+
+image = PhotoImage(file="/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/Level1.png") # TODO alter for differnt people
+image2 = PhotoImage(file="/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/Level2.png") # TODO alter for differnt people
+image3 = PhotoImage(file="/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/Level3.png") # TODO alter for differnt people
+
+button = tkinter.Button(root, text="Click Me!", command=on_button_click1, image=image)
+button.place(x=0, width=image.width(), height= image.height())
+
+button2 = tkinter.Button(root, text="Click Me!", command=on_button_click2, image=image2)
+button2.place(x=image.width(), width=image2.width(), height= image2.height())
+
+button3 = tkinter.Button(root, text="Click Me!", command=on_button_click3, image=image3)
+button3.place(x=image.width()+image2.width(), width=image3.width(), height= image3.height())
+
+root.mainloop()
 
 # Create the ground as a static rectangle
 ground_body = pymunk.Body(body_type=pymunk.Body.STATIC)  # Static body
@@ -131,65 +253,11 @@ def draw_slingshot(screen):
     # Add wood grain effect (lines for details)
     pygame.draw.line(screen, shadow_color, (95, 720), (95, 750), 2)  # Grain on the left side of the base
     pygame.draw.line(screen, shadow_color, (105, 720), (105, 750), 2)  # Grain on the right side of the base
-def blocks(x, y, width, height, is_intact, created):
-    mass = 1.0
-    inertia = pymunk.moment_for_box(mass, (width, height))
-
-    # Create the body
-    block_body = pymunk.Body(mass, inertia)
-    block_body.position = (x, y)
-
-    # Define the box shape with vertices relative to the center of the block
-    half_width = width / 2
-    half_height = height / 2
-    vertices = [
-        (-half_width, -half_height),  # Bottom-left corner
-        (half_width, -half_height),  # Bottom-right corner
-        (half_width, half_height),  # Top-right corner
-        (-half_width, half_height)  # Top-left corner
-    ]
-
-    # Create the shape using these relative vertices
-    block_shape = pymunk.Poly(block_body, vertices)
-    block_shape.elasticity = 0.0
-    block_shape.collision_type = BLOCK_COLLISION_TYPE  # Set block collision type
-    block_shape.friction = 1.0
-
-    block_body.velocity = (0,0)
-
-    block_body.width = width
-    block_body.height = height
-
-    block_body.is_intact = is_intact
-    block_body.created = created
-    block_body.shape = block_shape
-
-    # Add the body and shape to the space
-    if created:
-        space.add(block_body, block_shape)
-
-    return block_body
-def draw_blocks(screen, block_body):
-    if block_body.is_intact:
-        block_position = block_body.position
-        block_angle_degrees = math.degrees(block_body.angle)
-
-        # Determine whether to draw the block normally or rotated
-        if block_body.width > block_body.height:
-            # Draw normally
-            rotated_block_image = pygame.transform.rotate(medium_block, -block_angle_degrees)
-        else:
-            # Draw rotated 90 degrees
-            rotated_block_image = pygame.transform.rotate(medium_block, -block_angle_degrees + 90)
-
-        rotated_rect = rotated_block_image.get_rect(center=(block_position.x, block_position.y))
-
-        screen.blit(rotated_block_image, rotated_rect.topleft)
 def handle_bird_block_collision(arbiter, space, data):
     """Callback function to handle bird-block collision."""
     block_shape = arbiter.shapes[1]  # The block is the second shape in the collision pair
 
-    velocity_threshold = 200  # A threshold velocity to consider the block as falling
+    velocity_threshold = 300  # A threshold velocity to consider the block as falling
 
     # Remove the block's body and shape from the space
     if bird.velocity.y > velocity_threshold:
@@ -228,7 +296,7 @@ def handle_block_block_collision(arbiter, space, data):
     block_body_2 = block_shape_2.body
 
     # Check if either block is falling with high velocity
-    falling_threshold = 400  # A threshold velocity to consider a block falling
+    falling_threshold = 500  # A threshold velocity to consider a block falling
 
     if block_body_1.velocity.y > falling_threshold:
         # The first block breaks, so remove it from the space
@@ -272,36 +340,8 @@ def draw_rubber_band(screen, bird_pos, dragging):
         pygame.draw.line(screen, rubber_band_color, left_band_anchor, bird_pos, rubber_band_thickness)
         #Right rubber band
         pygame.draw.line(screen, rubber_band_color, right_band_anchor, bird_pos, rubber_band_thickness)
-def level(block_list, levels):
-    if len(block_list) > 0:
-        return True
-    elif len(block_list) == 0:
-        levels.remove(block_list)
-        if levels:
-            for block1 in levels[0]:
-                block1.created = True
-                space.add(block1, block1.shape)
-        else:
-            # No more levels, handle accordingly
-            print("Congratulations! You've completed all levels.")
 
 bird = create_bird(*slingshot_pos)
-
-block_list = [blocks(800, 730, 50, 100, True, True), blocks(900, 730, 50, 100, True, True), blocks(800, 685, 100, 50, True, True),
-              blocks(900, 685, 100, 50, True, True), blocks(800, 535, 50, 100, True, True), blocks(900, 535, 50, 100, True, True),
-              blocks(800, 460, 100, 50, True, True), blocks(900, 460, 100, 50, True, True)]
-
-block_list1 = [blocks(800, 340, 50, 100, True, False), blocks(900, 340, 50, 100, True, False), blocks(800, 730, 50, 100, True, False),
-               blocks(900, 730, 50, 100, True, False), blocks(800, 685, 100, 50, True, False), blocks(900, 685, 100, 50, True, False),
-               blocks(800, 535, 50, 100, True, False), blocks(900, 535, 50, 100, True, False), blocks(800, 460, 100, 50, True, False),
-               blocks(900, 460, 100, 50, True, False)]
-
-block_list2 = [blocks(800, 290, 100, 50, True, False), blocks(900, 290, 100, 50, True, False), blocks(800, 240, 50, 100, True, False),
-               blocks(900, 340, 50, 100, True, False), blocks(800, 730, 50, 100, True, False), blocks(900, 730, 50, 100, True, False),
-               blocks(800, 685, 100, 50, True, False), blocks(900, 685, 100, 50, True, False), blocks(800, 535, 50, 100, True, False),
-               blocks(900, 535, 50, 100, True, False), blocks(800, 460, 100, 50, True, False), blocks(900, 460, 100, 50, True, False)]
-
-levels = [block_list, block_list1, block_list2]
 
 # Add a collision handler for bird-block collisions
 collision_handler = space.add_collision_handler(BIRD_COLLISION_TYPE, BLOCK_COLLISION_TYPE)
@@ -317,8 +357,6 @@ block_block_collision_handler.begin = handle_block_block_collision  # Set the ca
 # Define rubber band attachment points on the slingshot
 left_band_anchor = (65, 620)  # Left side of the slingshot
 right_band_anchor = (135, 620)  # Right side of the slingshot
-
-# Function to draw the rubber band of the slingshot
 
 # Main loop
 running = True
@@ -406,14 +444,12 @@ while running:
 
     draw_bird(screen, bird)
 
-    level(levels[0], levels)
-
     # Use a copy of the list to avoid issues when removing items
-    for block in levels[0][:]:
+    for block in levels[level_num-1][:]:
         if block.is_intact:
             draw_blocks(screen, block)
         else:
-            levels[0].remove(block)
+            levels[level_num-1].remove(block)
 
 
     pygame.display.flip()
