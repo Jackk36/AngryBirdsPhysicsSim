@@ -33,10 +33,15 @@ medium_block = pygame.transform.scale(medium_block, (100,50))
 # TODO add the thing where blocks have lives
 medium_block_hit_1 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/"
                                  "MedBlockHit1.png")
+medium_block_hit_1 = pygame.transform.scale(medium_block_hit_1, (100,50))
 medium_block_hit_2 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/"
                                  "MedBlockHit2.png")
+medium_block_hit_2 = pygame.transform.scale(medium_block_hit_2, (100,50))
 medium_block_hit_3 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/"
                                  "MedBlockHit3.png")
+medium_block_hit_3 = pygame.transform.scale(medium_block_hit_3, (100,50))
+
+block_sprites = [medium_block, medium_block_hit_1, medium_block_hit_2, medium_block_hit_3]
 
 # Set up the space
 space = pymunk.Space()
@@ -45,6 +50,7 @@ space.gravity = (0, 900)  # Gravity
 slingshot_pos = (100, 600)  # Starting point of the bird (slingshot center)
 max_drag_distance = 100     # Max distance allowed for dragging (circle radius)
 level_num = 0
+medium_block_num = 0
 
 # Collision types
 BIRD_COLLISION_TYPE = 1
@@ -87,6 +93,8 @@ def blocks(x, y, width, height, is_intact, created):
 
     block_body.width = width
     block_body.height = height
+    block_body.image = medium_block
+    block_body.medium_block_num = medium_block_num
 
     block_body.is_intact = is_intact
     block_body.created = created
@@ -98,17 +106,17 @@ def blocks(x, y, width, height, is_intact, created):
 
     return block_body
 def draw_blocks(screen, block_body):
-    if block_body.is_intact:
+    if block_body.is_intact and block_body.medium_block_num < len(block_sprites):
         block_position = block_body.position
         block_angle_degrees = math.degrees(block_body.angle)
 
         # Determine whether to draw the block normally or rotated
         if block_body.width > block_body.height:
             # Draw normally
-            rotated_block_image = pygame.transform.rotate(medium_block, -block_angle_degrees)
+            rotated_block_image = pygame.transform.rotate(block_sprites[block_body.medium_block_num], -block_angle_degrees)
         else:
             # Draw rotated 90 degrees
-            rotated_block_image = pygame.transform.rotate(medium_block, -block_angle_degrees + 90)
+            rotated_block_image = pygame.transform.rotate(block_sprites[block_body.medium_block_num], -block_angle_degrees + 90)
 
         rotated_rect = rotated_block_image.get_rect(center=(block_position.x, block_position.y))
 
@@ -257,12 +265,16 @@ def handle_bird_block_collision(arbiter, space, data):
     """Callback function to handle bird-block collision."""
     block_shape = arbiter.shapes[1]  # The block is the second shape in the collision pair
 
-    velocity_threshold = 300  # A threshold velocity to consider the block as falling
+    velocity_threshold = 100  # A threshold velocity to consider the block as falling
 
     # Remove the block's body and shape from the space
     if bird.velocity.y > velocity_threshold:
-        space.remove(block_shape, block_shape.body)
-        block_shape.body.is_intact = False
+        block_shape.body.medium_block_num += 1
+        block_shape.image = block_sprites[block_shape.body.medium_block_num]
+        if block_shape.body.medium_block_num == len(block_sprites):
+            space.remove(block_shape, block_shape.body)
+            block_shape.body.is_intact = False
+
 
     # Collision handler to detect bird hitting block
     def bird_hit_block(arbiter, space, data):
@@ -280,11 +292,13 @@ def handle_block_ground_collision(arbiter, space, data):
     block_body = block_shape.body
 
     # Check if the block is falling
-    falling_threshold = 200  # A threshold velocity to consider the block as falling
+    falling_threshold = 100  # A threshold velocity to consider the block as falling
     if block_body.velocity.y > falling_threshold:
-        # The block is falling, so remove it from the space
-        space.remove(block_shape, block_shape.body)
-        block_body.is_intact = False
+        block_shape.body.medium_block_num += 1
+        block_shape.image = block_sprites[block_body.medium_block_num]
+        if block_body.medium_block_num == len(block_sprites):
+            space.remove(block_shape, block_shape.body)
+            block_shape.body.is_intact = False
 
     return True
 def handle_block_block_collision(arbiter, space, data):
@@ -296,18 +310,22 @@ def handle_block_block_collision(arbiter, space, data):
     block_body_2 = block_shape_2.body
 
     # Check if either block is falling with high velocity
-    falling_threshold = 500  # A threshold velocity to consider a block falling
+    falling_threshold = 400  # A threshold velocity to consider a block falling
 
     if block_body_1.velocity.y > falling_threshold:
-        # The first block breaks, so remove it from the space
-        space.remove(block_shape_1, block_body_1)
-        block_body_1.is_intact = False
+        block_body_1.medium_block_num += 1
+        block_body_1.image = block_sprites[block_body_1.medium_block_num]
+        if block_body_1.medium_block_num == len(block_sprites):
+            space.remove(block_body_1)
+            block_body_1.body.is_intact = False
 
     # Check if the second block is falling or rotating too fast
     elif block_body_2.velocity.y > falling_threshold:
-        # The second block breaks, so remove it from the space
-        space.remove(block_shape_2, block_body_2)
-        block_body_2.is_intact = False
+        block_body_2.medium_block_num += 1
+        block_body_2.image = block_sprites[block_body_2.medium_block_num]
+        if block_body_2.medium_block_num == len(block_sprites):
+            space.remove(block_body_2)
+            block_body_2.body.is_intact = False
 
     return True  # Continue with the normal collision processing
 def draw_trajectory(surface, bird_body, drag_vector, steps=10, step_size=0.1):
@@ -408,7 +426,6 @@ while running:
 
     # Update physics
     space.step(1 / 50.0)  # Simulate physics with a fixed time step
-    space.debug_draw(draw_options)
 
     # Update the bird's position while dragging
     if dragging:
@@ -450,7 +467,6 @@ while running:
             draw_blocks(screen, block)
         else:
             levels[level_num-1].remove(block)
-
 
     pygame.display.flip()
     clock.tick(50)
