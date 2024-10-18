@@ -9,7 +9,6 @@ pygame.display.set_caption("Angry Birds in Python")
 clock = pygame.time.Clock()
 space = pymunk.Space()
 space.gravity = (0, 900)
-
 # Draw options
 draw_options = pymunk.pygame_util.DrawOptions(screen)
 
@@ -43,14 +42,16 @@ def create_ground():
 def create_bird(x, y):
     mass = 1
     radius = 15
+    # making the bird a bird
+    scrn = screen
+    pygame.display.set_caption('image')# set the pygame window name
+    imp = pygame.image.load("redAngryBird.png").convert_alpha() # create a surface object, image is drawn on it.
+    # Using blit to copy content from one surface to other
+    scrn.blit(imp, (0, 0))
     inertia = pymunk.moment_for_circle(mass, 0, radius)
     bird_body = pymunk.Body(mass, inertia)
     bird_body.position = (x, y)
-    bird_shape = pymunk.Circle(bird_body, radius)
-    bird_shape.elasticity = 0.8
-    bird_shape.collision_type = BIRD_COLLISION_TYPE  # Set bird collision type
-    bird_shape.friction = 1.0
-    bird_body.velocity = (0,0)
+    bird_shape = imp
     space.add(bird_body, bird_shape)
     return bird_body
 
