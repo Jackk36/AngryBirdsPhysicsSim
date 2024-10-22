@@ -13,7 +13,6 @@ class NoButtonDialog(simpledialog.Dialog):
     def body(self, master):
         tkinter.Label(master, text="PLay Again?").pack()
         return None
-
     def buttonbox(self):
         box = tkinter.Frame(self)
 
@@ -21,11 +20,9 @@ class NoButtonDialog(simpledialog.Dialog):
         no_button.pack(side=tkinter.LEFT, padx=5, pady=5)
 
         box.pack()
-
     def no(self):
         self.result = "No"
         self.destroy()
-
 def show_no_messagebox():
     root = tkinter.Tk()
     root.withdraw()  # Hide the main window
@@ -52,7 +49,6 @@ root.focus_force()
 root.title("Level Select")
 root.geometry("480x320+500+300")  # width x height + x + y
 
-
 class Bear:
     def __init__(self, x, y):
         self.image = pygame.image.load('cuteBear.png')  # Load bear button image
@@ -63,7 +59,6 @@ class Bear:
 
     def is_clicked(self, mouse_pos):
         return self.rect.collidepoint(mouse_pos)
-
 
 bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdImage.png")  # Path to your uploaded image
 bird_rect = bird_image.get_rect()
@@ -315,7 +310,6 @@ button6.place(x=400, y = 110, width=image.width(), height= image.height())
 
 root.mainloop()
 
-
 # Create the ground as a static rectangle
 ground_body = pymunk.Body(body_type=pymunk.Body.STATIC)  # Static body
 ground_body.position = (600, 780)  # Center of the screen horizontally, near the bottom
@@ -326,18 +320,11 @@ ground_shape.friction = 1.0
 ground_shape.collision_type = GROUND_COLLISION_TYPE
 space.add(ground_body, ground_shape)
 
-
-
-
-
-# Function to draw the floor with a custom color
 def draw_floor(screen, ground_shape):
     floor_color = (20, 200, 20)  # Custom color (green in this case)
     vertices = ground_shape.get_vertices()  # Get the vertices of the ground
     points = [(v.x + ground_body.position.x, v.y + ground_body.position.y) for v in vertices]
     pygame.draw.polygon(screen, floor_color, points)  # Draw the floor polygon
-
-# Function to draw pointy grass
 def draw_grass(screen, y, ground_shape, color):
     ground_top = 790  # Fixed y-coordinate for the top of the ground
     # Loop to draw grass blades across the top of the ground
@@ -350,8 +337,6 @@ def draw_grass(screen, y, ground_shape, color):
             grass_blade = [(x, y + ground_top - (5 + 3 * n)), (x + 10, y + ground_top - 3 * n),
                            (x + 20, y + ground_top - 5 * (5 + 3 * n))]
             pygame.draw.polygon(screen, color, grass_blade)
-
-
 def draw_cloud(screen, x, y, scale=1.0):
     """Draws a cloud using a PNG at the specified position and scale."""
     # Scale the cloud image
@@ -362,10 +347,6 @@ def draw_cloud(screen, x, y, scale=1.0):
 
     # Draw the cloud on the screen
     screen.blit(scaled_cloud, scaled_rect.topleft)
-
-
-
-# Function to draw the bird image
 def draw_bird(screen, bird_body):
     bird_position = bird_body.position
     bird_angle_degrees = math.degrees(bird_body.angle)  # Convert angle to degrees for Pygame
@@ -379,8 +360,6 @@ def draw_bird(screen, bird_body):
 
     # Blit the rotated image at the updated position
     screen.blit(rotated_bird_image, rotated_rect.topleft)
-
-# Function to create the bird
 def create_bird(x, y):
     mass = 1
     radius = 15
@@ -394,8 +373,6 @@ def create_bird(x, y):
     bird_body.velocity = (0,0)
     space.add(bird_body, bird_shape)
     return bird_body
-
-# Function to draw the sun with a smile and rays
 def draw_sun(screen):
     sun_color = (255, 223, 0)  # Yellow
     sun_center = (1100, 100)  # Position of the sun
@@ -419,8 +396,6 @@ def draw_sun(screen):
     # Draw the smiling mouth (arc)
     mouth_color = (0, 0, 0)  # Black
     pygame.draw.arc(screen, mouth_color, [1080, 80, 60, 40], 3.14, 0, 3)  # Draw the smile (arc)
-
-# Function to draw the wooden slingshot with more detail
 def draw_slingshot(screen):
     slingshot_color = (139, 69, 19)  # Brown color for the wood
     shadow_color = (115, 55, 17)  # Darker brown for shading
@@ -438,7 +413,6 @@ def draw_slingshot(screen):
     # Add wood grain effect (lines for details)
     pygame.draw.line(screen, shadow_color, (95, 720), (95, 750), 2)  # Grain on the left side of the base
     pygame.draw.line(screen, shadow_color, (105, 720), (105, 750), 2)  # Grain on the right side of the base
-
 def draw_trajectory(surface, bird_body, drag_vector, steps=10, step_size=0.1):
     """Draws the trajectory of the bird using small dots."""
     # Launch power based on drag
@@ -689,7 +663,10 @@ while running:
     screen.fill((200, 220, 255))  # Blue background (sky)
     draw_bear_button()
     # Update physics
-    space.step(1 / 50.0)  # Simulate physics with a fixed time step
+    try:
+        space.step(1 / 50.0)  # Simulate physics with a fixed time step
+    except Exception:
+        print("THE SPACE DIDNT STEP")
 
     # Update the bird's position while dragging
     if dragging:
@@ -719,7 +696,6 @@ while running:
         cloud_pos[0] += cloud_speed * (i/ 100.0)
         i+=1
 
-
     # Respawn clouds on the left side when they go off the right side of the screen
     if cloud1_pos[0] > 1700:
         cloud1_pos[0] = -800  # Respawn slightly off the screen on the left side
@@ -740,9 +716,6 @@ while running:
     draw_cloud(screen, cloud3_pos[0], cloud3_pos[1], 0.1)
     for n in cloudList:
         draw_cloud(screen,cloud_pos[0],cloud_pos[1],0.1)
-
-
-
 
     # Draw the custom floor
     draw_floor(screen, ground_shape)
