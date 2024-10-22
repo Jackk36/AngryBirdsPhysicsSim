@@ -37,7 +37,7 @@ pygame.init()
 pygame.mixer.init()
 pygame.font.init()
 
-pygame.mixer.music.load('/Users/jack_goode/PycharmProjects/AngryBirdsPhysicsSim/music.mp3')
+pygame.mixer.music.load('/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/music.mp3')
 pygame.mixer.music.set_volume(1.0)
 sound_on = False  # Initially, the sound is off
 
@@ -73,7 +73,7 @@ bear_img = pygame.transform.scale(bear_img, (100, 100))  # Scale it to fit the b
 music_playing = False  # Music starts off
 hit_bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdHit.png")
 
-cloud_image = pygame.image.load("/Users/jack_goode/PycharmProjects/AngryBirdsPhysicsSim/cloud.png")
+cloud_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/cloud.png")
 cloud_rect = cloud_image.get_rect()  # Get the dimensions of the cloud
 # Cloud initial positions and velocities
 cloud1_pos = [900, 0]  # x, y
@@ -684,27 +684,6 @@ while running:
                 else:
                     pygame.mixer.music.play(-1)  # Play the music indefinitely
                 music_playing = not music_playing  # Toggle the music state
-            # if bird.position.get_distance(mouse_pos) < 20 and not bird_launched:
-            #     dragging = True
-            #     bird.velocity = (0, 0)  # Stop any falling during drag
-            #     initial_mouse_pos = mouse_pos  # Set initial mouse position when dragging starts
-            #     if drag_vector.length > max_drag_distance:
-            #         drag_vector = drag_vector.normalized() * max_drag_distance * 10
-            #
-            #
-            #
-            #     # Calculate launch velocity and apply it to the bird
-            #     launch_velocity = -drag_vector.normalized() * (drag_vector.length / max_drag_distance * launch_power)
-            #     bird.velocity = launch_velocity
-            #     dragging = False
-            #     bird_launched = True  # Set bird as launched after release
-            #     initial_mouse_pos = None  # Store initial click position
-            #     bird_image = pygame.image.load("/Users/jack_goode/PycharmProjects/AngryBirdsPhysicsSim/BirdFlying1.png")  # Path to your uploaded image
-            # elif event.type == pygame.MOUSEBUTTONUP:
-            #     if dragging and initial_mouse_pos and not bird_launched:
-            #         mouse_x, mouse_y = pygame.mouse.get_pos()
-            #         current_mouse_pos = pymunk.Vec2d(mouse_x, mouse_y)
-
 
     # Keep the bird floating until launched
     if not bird_launched and not dragging:
