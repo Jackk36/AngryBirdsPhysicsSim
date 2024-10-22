@@ -2,19 +2,58 @@ import pygame
 import pymunk
 import pymunk.pygame_util
 import math
+import random
+
+
+# from pymunk.examples.planet import screen_size
 
 # Initialize pygame
 pygame.init()
+pygame.mixer.init()
+pygame.font.init()
+
+pygame.mixer.music.load('/Users/jack_goode/PycharmProjects/AngryBirdsPhysicsSim/music.mp3')
+pygame.mixer.music.set_volume(1.0)
+sound_on = False  # Initially, the sound is off
 
 # Set up the display
 screen = pygame.display.set_mode((1200, 800))
 clock = pygame.time.Clock()
 draw_options = pymunk.pygame_util.DrawOptions(screen)
 
-bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdImage.png")  # Path to your uploaded image
-bird_rect = bird_image.get_rect()
 
-hit_bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdHit.png")
+class Bear:
+    def __init__(self, x, y):
+        self.image = pygame.image.load('cuteBear.png')  # Load bear button image
+        self.rect = self.image.get_rect(center=(x, y))
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def is_clicked(self, mouse_pos):
+        return self.rect.collidepoint(mouse_pos)
+
+
+bird_image = pygame.image.load("/Users/jack_goode/PycharmProjects/AngryBirdsPhysicsSim/BirdImage.png")  # Path to your uploaded image
+bird_rect = bird_image.get_rect()
+bear_button = pygame.Rect( 10, 10, 100, 100)  # Rect for bear button (x, y, width, height)
+bear_img = pygame.image.load('cuteBear.png')  # Use a bear image file here
+bear_img = pygame.transform.scale(bear_img, (100, 100))  # Scale it to fit the button
+music_playing = False  # Music starts off
+hit_bird_image = pygame.image.load("/Users/jack_goode/PycharmProjects/AngryBirdsPhysicsSim/BirdHit.png")
+
+cloud_image = pygame.image.load("/Users/jack_goode/PycharmProjects/AngryBirdsPhysicsSim/cloud.png")
+cloud_rect = cloud_image.get_rect()  # Get the dimensions of the cloud
+# Cloud initial positions and velocities
+cloud1_pos = [900, 0]  # x, y
+cloud2_pos = [200, 120]
+cloud3_pos = [600, 0]
+cloudList = []
+for n in range(5):
+    # Initialize clouds with random x, y positions
+    cloud_pos = [random.randint(0, screen.get_width()), random.randint(0, 150)]  # Randomize within a range
+    cloudList.append(cloud_pos)
+cloud_speed = 30  # Speed at which the clouds move (pixels per second)
 
 # Set up the space
 space = pymunk.Space()
@@ -38,6 +77,10 @@ ground_shape.friction = 0.5
 ground_shape.collision_type = GROUND_COLLISION_TYPE
 space.add(ground_body, ground_shape)
 
+
+
+
+
 # Function to draw the floor with a custom color
 def draw_floor(screen, ground_shape):
     floor_color = (20, 200, 20)  # Custom color (green in this case)
@@ -58,6 +101,20 @@ def draw_grass(screen, y, ground_shape, color):
             grass_blade = [(x, y + ground_top - (5 + 3 * n)), (x + 10, y + ground_top - 3 * n),
                            (x + 20, y + ground_top - 5 * (5 + 3 * n))]
             pygame.draw.polygon(screen, color, grass_blade)
+
+
+def draw_cloud(screen, x, y, scale=1.0):
+    """Draws a cloud using a PNG at the specified position and scale."""
+    # Scale the cloud image
+    scaled_cloud = pygame.transform.scale(cloud_image, (int(cloud_rect.width * scale), int(cloud_rect.height * scale)))
+
+    # Get the new rect of the scaled image to position it correctly
+    scaled_rect = scaled_cloud.get_rect(center=(x, y))
+
+    # Draw the cloud on the screen
+    screen.blit(scaled_cloud, scaled_rect.topleft)
+
+
 
 # Function to draw the bird image
 def draw_bird(screen, bird_body):
@@ -127,6 +184,7 @@ def draw_slingshot(screen):
     pygame.draw.polygon(screen, slingshot_color, [(80, 770), (50, 690), (35, 610), (65, 610), (80, 690)])  # Left arm
     pygame.draw.polygon(screen, slingshot_color,
                         [(120, 770), (150, 690), (165, 610), (135, 610), (120, 690)])  # Right arm
+    pygame.draw.polygon(screen, shadow_color, [(80, 770), (50, 690), (35, 610), (45, 610), (62, 690)])  # Left arm
 
     # Add wood grain effect (lines for details)
     pygame.draw.line(screen, shadow_color, (95, 720), (95, 750), 2)  # Grain on the left side of the base
@@ -250,6 +308,7 @@ def draw_rubber_band(screen, bird_pos, dragging):
         #Right rubber band
         pygame.draw.line(screen, rubber_band_color, right_band_anchor, bird_pos, rubber_band_thickness)
 
+
 bird = create_bird(*slingshot_pos)
 
 blocks(800, 730, 50, 75)
@@ -276,12 +335,17 @@ block_ground_collision_handler.begin = handle_block_ground_collision  # Set the 
 block_block_collision_handler = space.add_collision_handler(BLOCK_COLLISION_TYPE, BLOCK_COLLISION_TYPE)
 block_block_collision_handler.begin = handle_block_block_collision  # Set the callback
 
+def draw_bear_button():
+    screen.blit(bear_img, (bear_button.x, bear_button.y))
+
 
 # Define rubber band attachment points on the slingshot
 left_band_anchor = (65, 620)  # Left side of the slingshot
 right_band_anchor = (135, 620)  # Right side of the slingshot
 
 # Function to draw the rubber band of the slingshot
+
+
 
 # Main loop
 running = True
@@ -290,70 +354,102 @@ launch_power = 100
 initial_mouse_pos = None  # Store initial click position
 bird_launched = False  # Track whether the bird has been launched
 while running:
+    draw_bear_button()  # Draw the bear button
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
-            if bird.position.get_distance(mouse_pos) < 20 and not bird_launched:
-                dragging = True
-                bird.velocity = (0, 0)  # Stop any falling during drag
-                initial_mouse_pos = mouse_pos  # Set initial mouse position when dragging starts
-        elif event.type == pygame.MOUSEBUTTONUP:
-            if dragging and initial_mouse_pos and not bird_launched:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                current_mouse_pos = pymunk.Vec2d(mouse_x, mouse_y)  # Get the current mouse position
-                drag_vector = current_mouse_pos - initial_mouse_pos  # Calculate the drag vector based on initial click position
 
-                # Scale the launch velocity based on the drag distance, clamped to max_drag_distance
-                if drag_vector.length > max_drag_distance:
-                    drag_vector = drag_vector.normalized() * max_drag_distance * 10
+            if bear_button.collidepoint(event.pos):  # If bear button is clicked
+                if music_playing:
+                    pygame.mixer.music.stop()  # Stop the music
+                else:
+                    pygame.mixer.music.play(-1)  # Play the music indefinitely
+                music_playing = not music_playing  # Toggle the music state
+            # if bird.position.get_distance(mouse_pos) < 20 and not bird_launched:
+            #     dragging = True
+            #     bird.velocity = (0, 0)  # Stop any falling during drag
+            #     initial_mouse_pos = mouse_pos  # Set initial mouse position when dragging starts
+            #     if drag_vector.length > max_drag_distance:
+            #         drag_vector = drag_vector.normalized() * max_drag_distance * 10
+            #
+            #
+            #
+            #     # Calculate launch velocity and apply it to the bird
+            #     launch_velocity = -drag_vector.normalized() * (drag_vector.length / max_drag_distance * launch_power)
+            #     bird.velocity = launch_velocity
+            #     dragging = False
+            #     bird_launched = True  # Set bird as launched after release
+            #     initial_mouse_pos = None  # Store initial click position
+            #     bird_image = pygame.image.load("/Users/jack_goode/PycharmProjects/AngryBirdsPhysicsSim/BirdFlying1.png")  # Path to your uploaded image
+            # elif event.type == pygame.MOUSEBUTTONUP:
+            #     if dragging and initial_mouse_pos and not bird_launched:
+            #         mouse_x, mouse_y = pygame.mouse.get_pos()
+            #         current_mouse_pos = pymunk.Vec2d(mouse_x, mouse_y)
 
-                # Calculate launch velocity and apply it to the bird
-                launch_velocity = -drag_vector.normalized() * (drag_vector.length / max_drag_distance * launch_power)
-                bird.velocity = launch_velocity
-                dragging = False
-                bird_launched = True  # Set bird as launched after release
-                initial_mouse_pos = None  # Store initial click position
-                bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdFlying1.png")  # Path to your uploaded image
 
-    # Keep the bird floating until launched
+                    # Keep the bird floating until launched
     if not bird_launched and not dragging:
+
         bird.velocity = (0, 0)  # Ensure bird stays in place until launched
         bird.position = slingshot_pos  # Reset bird position to the slingshot
 
     screen.fill((200, 220, 255))  # Blue background (sky)
-
+    draw_bear_button()
     # Update physics
     space.step(1 / 50.0)  # Simulate physics with a fixed time step
     space.debug_draw(draw_options)
 
-    # Update the bird's position while dragging
-    if dragging:
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        current_mouse_pos = pymunk.Vec2d(mouse_x, mouse_y)  # Get current mouse position
-        drag_vector = current_mouse_pos - initial_mouse_pos  # Calculate drag vector based on the initial click
-
-        # Ensure we do not exceed max drag distance
-        if drag_vector.length > max_drag_distance:
-            drag_vector = drag_vector.normalized() * max_drag_distance
-
-        # Set bird's position to slingshot position + drag vector
-        bird.position = slingshot_pos + drag_vector  # Update bird's position based on the drag
-        bird.velocity = (0, 0)  # Bird doesn't move while dragging
-
-        # Draw the predicted trajectory while dragging
-        draw_trajectory(screen, bird, drag_vector)
     # Draw the smiling sun in the background with rays
     draw_sun(screen)
+    # Update the positions of the clouds
+    cloud1_pos[0] += cloud_speed * (1 / 50.0)  # Speed * frame time
+    cloud2_pos[0] += cloud_speed * (1 / 50.0)
+    cloud3_pos[0] += cloud_speed * (1 / 50.0)
+    i = 1
+    for cloud_pos in cloudList:
+        draw_cloud(screen, cloud_pos[0], cloud_pos[1], 0.2)# You can vary the scale if needed
+        cloud_pos[0] += cloud_speed * (i/ 100.0)
+        i+=1
+
+
+    # Respawn clouds on the left side when they go off the right side of the screen
+    if cloud1_pos[0] > 1700:
+        cloud1_pos[0] = -800  # Respawn slightly off the screen on the left side
+        cloud1_pos[1] = random.randint(-100, 150)  # Randomize the height for variety
+    if cloud2_pos[0] > 1700:
+        cloud2_pos[0] = -300
+        cloud2_pos[1] = random.randint(-100, 150)
+    if cloud3_pos[0] > 1700:
+        cloud3_pos[0] = -300
+        cloud3_pos[1] = random.randint(-100, 150)
+    for n in cloudList:
+        if cloud_pos[0] > 1700:
+            cloud_pos[0] = -100
+
+    # Draw moving clouds
+    draw_cloud(screen, cloud1_pos[0], cloud1_pos[1], 0.3)
+    draw_cloud(screen, cloud2_pos[0], cloud2_pos[1], 0.1)
+    draw_cloud(screen, cloud3_pos[0], cloud3_pos[1], 0.1)
+    for n in cloudList:
+        draw_cloud(screen,cloud_pos[0],cloud_pos[1],0.1)
+
+
+
 
     # Draw the custom floor
     draw_floor(screen, ground_shape)
 
-    # Draw the grass on top of the ground
+    # Draw the grass on top of the ground, and clouds
     draw_grass(screen, 40, ground_shape, (34, 139, 34))
     draw_grass(screen, 22, ground_shape, (4, 109, 4))
     draw_grass(screen, 0, ground_shape, (34, 139, 34))
+
+    # Draw bear button for sound control
+    def draw_bear_button():
+        screen.blit(bear_img, (bear_button.x, bear_button.y))
 
     # Draw the wooden slingshot with enhanced details
     draw_slingshot(screen)
@@ -364,5 +460,6 @@ while running:
 
     pygame.display.flip()
     clock.tick(50)
+
 
 pygame.quit()
