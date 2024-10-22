@@ -678,12 +678,6 @@ while running:
                 bird_launched = True  # Set bird as launched after release
                 initial_mouse_pos = None  # Store initial click position
                 bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdFlying1.png")  # Path to your uploaded image
-            if bear_button.collidepoint(event.pos):  # If bear button is clicked
-                if music_playing:
-                    pygame.mixer.music.stop()  # Stop the music
-                else:
-                    pygame.mixer.music.play(-1)  # Play the music indefinitely
-                music_playing = not music_playing  # Toggle the music state
 
     # Keep the bird floating until launched
     if not bird_launched and not dragging:
