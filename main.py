@@ -34,7 +34,7 @@ pygame.init()
 pygame.mixer.init()
 pygame.font.init()
 
-pygame.mixer.music.load('/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/music.mp3')
+pygame.mixer.music.load('music.mp3')
 pygame.mixer.music.set_volume(1.0)
 sound_on = False  # Initially, the sound is off
 
@@ -49,26 +49,32 @@ root.focus_force()
 root.title("Level Select")
 root.geometry("480x320+500+300")  # width x height + x + y
 
-class Bear:
-    def __init__(self, x, y):
-        self.image = pygame.image.load('cuteBear.png')  # Load bear button image
-        self.rect = self.image.get_rect(center=(x, y))
+RedBird = True
 
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
+red_bird_image = pygame.image.load("BirdImage.png")  # Path to your uploaded image
+blue_bird_image = pygame.image.load("BlueGuy.png")  # Path to your uploaded image
 
-    def is_clicked(self, mouse_pos):
-        return self.rect.collidepoint(mouse_pos)
+red_hit_image = pygame.image.load("BirdHit.png")
+blue_hit_image = pygame.image.load("BlueGuyHit.png")
 
-bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdImage.png")  # Path to your uploaded image
+red_fly_image = pygame.image.load("BirdFlying1.png")
+blue_fly_image = pygame.image.load("BlueGuyFly.png")
+
+bird_image = red_bird_image
+
+hit_bird_image = red_hit_image
+
+bird_fly_image = red_fly_image
+
+blue_bird_draw = False
+
 bird_rect = bird_image.get_rect()
 bear_button = pygame.Rect( 10, 10, 100, 100)  # Rect for bear button (x, y, width, height)
 bear_img = pygame.image.load('cuteBear.png')  # Use a bear image file here
 bear_img = pygame.transform.scale(bear_img, (100, 100))  # Scale it to fit the button
 music_playing = False  # Music starts off
-hit_bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdHit.png")
 
-cloud_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/cloud.png")
+cloud_image = pygame.image.load("cloud.png")
 cloud_rect = cloud_image.get_rect()  # Get the dimensions of the cloud
 # Cloud initial positions and velocities
 cloud1_pos = [900, 0]  # x, y
@@ -81,20 +87,20 @@ for n in range(5):
     cloudList.append(cloud_pos)
 cloud_speed = 30  # Speed at which the clouds move (pixels per second)
 
-medium_block = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlock.png")
+medium_block = pygame.image.load("MedBlock.png")
 medium_block = pygame.transform.scale(medium_block, (100,50))
-medium_block_hit_1 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlockHit1.png")
+medium_block_hit_1 = pygame.image.load("MedBlockHit1.png")
 medium_block_hit_1 = pygame.transform.scale(medium_block_hit_1, (100,50))
-medium_block_hit_2 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlockHit2.png")
+medium_block_hit_2 = pygame.image.load("MedBlockHit2.png")
 medium_block_hit_2 = pygame.transform.scale(medium_block_hit_2, (100,50))
-medium_block_hit_3 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlockHit3.png")
+medium_block_hit_3 = pygame.image.load("MedBlockHit3.png")
 medium_block_hit_3 = pygame.transform.scale(medium_block_hit_3, (100,50))
 block_sprites = [medium_block, medium_block_hit_1, medium_block_hit_2, medium_block_hit_3]
 
-pig_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/Pig.png")
-pig_image_hit_1 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/PigHit1.png")
-pig_image_hit_2 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/PigHit2.png")
-pig_image_hit_3 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/PigHit3.png")
+pig_image = pygame.image.load("Pig.png")
+pig_image_hit_1 = pygame.image.load("PigHit1.png")
+pig_image_hit_2 = pygame.image.load("PigHit2.png")
+pig_image_hit_3 = pygame.image.load("PigHit3.png")
 pig_sprites = [pig_image, pig_image_hit_1, pig_image_hit_2, pig_image_hit_3]
 
 # Set up the space
@@ -284,8 +290,8 @@ def on_button_click6():
     load_level(levels, level_num)
     root.destroy()
 
-image = PhotoImage(file="/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/Level1.png") # TODO alter for differnt people
-level_background_image = PhotoImage(file="/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/LevelBackground.png") # TODO alter for differnt people
+image = PhotoImage(file="Level1.png")
+level_background_image = PhotoImage(file="LevelBackground.png")
 
 label1 = Label( root, image = level_background_image)
 label1.place(x = 0, y = 0)
@@ -316,7 +322,7 @@ ground_body.position = (600, 780)  # Center of the screen horizontally, near the
 
 # Create the rectangular shape for the ground
 ground_shape = pymunk.Poly.create_box(ground_body, (2200, 70))  # Width: 600, Height: 70
-ground_shape.friction = 1.0
+ground_shape.friction = 0.1
 ground_shape.collision_type = GROUND_COLLISION_TYPE
 space.add(ground_body, ground_shape)
 
@@ -360,7 +366,7 @@ def draw_bird(screen, bird_body):
 
     # Blit the rotated image at the updated position
     screen.blit(rotated_bird_image, rotated_rect.topleft)
-def create_bird(x, y):
+def create_bird(x, y, velocity):
     mass = 1
     radius = 15
     inertia = pymunk.moment_for_circle(mass, 0, radius)
@@ -370,7 +376,7 @@ def create_bird(x, y):
     bird_shape.elasticity = 0.8
     bird_shape.collision_type = BIRD_COLLISION_TYPE  # Set bird collision type
     bird_shape.friction = 1.0
-    bird_body.velocity = (0,0)
+    bird_body.velocity = velocity
     space.add(bird_body, bird_shape)
     return bird_body
 def draw_sun(screen):
@@ -576,7 +582,7 @@ def handle_pig_block_collision(arbiter, space, data):
 
     return True  # Continue with the normal collision processing
 
-bird = create_bird(*slingshot_pos)
+bird = create_bird(100, 600, (0,0))
 
 # Add a collision handler for bird-block collisions
 collision_handler = space.add_collision_handler(BIRD_COLLISION_TYPE, BLOCK_COLLISION_TYPE)
@@ -623,6 +629,8 @@ while running:
                 initial_mouse_pos = None  # Store initial click position
                 bird_launched = False  # Track whether the bird has been launched
                 bird.position = slingshot_pos
+            if event.key == pygame.K_e:
+                RedBird = not RedBird
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
             if bear_button.collidepoint(event.pos):  # If bear button is clicked
@@ -636,6 +644,10 @@ while running:
                 dragging = True
                 bird.velocity = (0, 0)  # Stop any falling during drag
                 initial_mouse_pos = mouse_pos  # Set initial mouse position when dragging starts
+            if bird_launched and not RedBird:
+                blue_bird_draw = True
+                bird1 = create_bird(bird.position.x, bird.position.y - 50, bird.velocity)
+                bird2 = create_bird(bird.position.x, bird.position.y + 50, bird.velocity)
         elif event.type == pygame.MOUSEBUTTONUP:
             if dragging and initial_mouse_pos and not bird_launched:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -651,7 +663,7 @@ while running:
                 dragging = False
                 bird_launched = True  # Set bird as launched after release
                 initial_mouse_pos = None  # Store initial click position
-                bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdFlying1.png")  # Path to your uploaded image
+                bird_image = bird_fly_image
 
     # Keep the bird floating until launched
     if not bird_launched and not dragging:
@@ -735,6 +747,18 @@ while running:
     draw_rubber_band(screen, bird.position, dragging)
 
     draw_bird(screen, bird)
+    if blue_bird_draw:
+        draw_bird(screen, bird1)
+        draw_bird(screen, bird2)
+
+    if RedBird:
+        bird_image = red_bird_image
+        hit_bird_image = red_hit_image
+        bird_fly_image = red_fly_image
+    elif not RedBird:
+        bird_image = blue_bird_image
+        hit_bird_image = blue_hit_image
+        bird_fly_image = blue_fly_image
 
     # Use a copy of the list to avoid issues when removing items
     for block in levels[level_num-1][:][0]:
