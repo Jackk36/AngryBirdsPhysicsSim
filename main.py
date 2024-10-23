@@ -1,3 +1,6 @@
+import time
+from venv import create
+
 import pygame
 import pymunk
 import pymunk.pygame_util
@@ -112,6 +115,7 @@ max_drag_distance = 100     # Max distance allowed for dragging (circle radius)
 level_num = 0
 medium_block_num = 0
 pig_image_num = 0
+lives = 3
 
 # Collision types
 BIRD_COLLISION_TYPE = 1
@@ -322,7 +326,7 @@ ground_body.position = (600, 780)  # Center of the screen horizontally, near the
 
 # Create the rectangular shape for the ground
 ground_shape = pymunk.Poly.create_box(ground_body, (2200, 70))  # Width: 600, Height: 70
-ground_shape.friction = 0.1
+ground_shape.friction = 0.9
 ground_shape.collision_type = GROUND_COLLISION_TYPE
 space.add(ground_body, ground_shape)
 
@@ -377,6 +381,7 @@ def create_bird(x, y, velocity):
     bird_shape.collision_type = BIRD_COLLISION_TYPE  # Set bird collision type
     bird_shape.friction = 1.0
     bird_body.velocity = velocity
+    bird_body.bird_launched = False
     space.add(bird_body, bird_shape)
     return bird_body
 def draw_sun(screen):
@@ -419,13 +424,13 @@ def draw_slingshot(screen):
     # Add wood grain effect (lines for details)
     pygame.draw.line(screen, shadow_color, (95, 720), (95, 750), 2)  # Grain on the left side of the base
     pygame.draw.line(screen, shadow_color, (105, 720), (105, 750), 2)  # Grain on the right side of the base
-def draw_trajectory(surface, bird_body, drag_vector, steps=10, step_size=0.1):
+def draw_trajectory(surface, bird, drag_vector, steps=10, step_size=0.1):
     """Draws the trajectory of the bird using small dots."""
     # Launch power based on drag
     launch_power_scaled = drag_vector.length / max_drag_distance * launch_power
     initial_velocity = -drag_vector.normalized() * launch_power_scaled * 10  # Calculate launch velocity
 
-    bird_pos = pymunk.Vec2d(bird_body.position.x, bird_body.position.y)  # Get current bird position
+    bird_pos = pymunk.Vec2d(bird.position.x, bird.position.y)  # Get current bird position
 
     for i in range(steps):
         t = step_size * i  # Time step
@@ -444,7 +449,7 @@ def draw_rubber_band(screen, bird_pos, dragging):
     rubber_band_thickness = 8
 
     # Draw the rubber band only if the bird is being dragged
-    if not bird_launched:
+    if not birds[0].bird_launched:
         # Left rubber band
         pygame.draw.line(screen, rubber_band_color, left_band_anchor, bird_pos, rubber_band_thickness)
         #Right rubber band
@@ -456,7 +461,7 @@ def handle_bird_block_collision(arbiter, space, data):
     velocity_threshold = 100  # A threshold velocity to consider the block as falling
 
     # Remove the block's body and shape from the space
-    if bird.velocity.y > velocity_threshold or bird.velocity.x > velocity_threshold:
+    if birds[0].velocity.y > velocity_threshold or birds[0].velocity.x > velocity_threshold:
         block_shape.body.medium_block_num += 1
         if block_shape.body.medium_block_num >= len(block_sprites):
             space.remove(block_shape, block_shape.body)
@@ -525,7 +530,7 @@ def handle_bird_pig_collision(arbiter, space, data):
     velocity_threshold = 1  # A threshold velocity to consider the block as falling
 
     # Remove the block's body and shape from the space
-    if bird.velocity.y > velocity_threshold or bird.velocity.x > velocity_threshold:
+    if birds[0].velocity.y > velocity_threshold or birds[0].velocity.x > velocity_threshold:
         space.remove(pig_shape, pig_shape.body)
         pig_shape.body.dead = True
 
@@ -584,6 +589,11 @@ def handle_pig_block_collision(arbiter, space, data):
 
 bird = create_bird(100, 600, (0,0))
 
+bird_num_2 = create_bird(200, 700, (0,0))
+bird_num_3 = create_bird(250, 700, (0,0))
+
+birds = [bird, bird_num_2, bird_num_3]
+
 # Add a collision handler for bird-block collisions
 collision_handler = space.add_collision_handler(BIRD_COLLISION_TYPE, BLOCK_COLLISION_TYPE)
 collision_handler.begin = handle_bird_block_collision  # Set the callback
@@ -616,7 +626,6 @@ running = True
 dragging = False
 launch_power = 100
 initial_mouse_pos = None  # Store initial click position
-bird_launched = False  # Track whether the bird has been launched
 while running:
     draw_bear_button()  # Draw the bear button
     for event in pygame.event.get():
@@ -627,8 +636,8 @@ while running:
                 dragging = False
                 launch_power = 100
                 initial_mouse_pos = None  # Store initial click position
-                bird_launched = False  # Track whether the bird has been launched
-                bird.position = slingshot_pos
+                birds[0].bird_launched = False  # Track whether the bird has been launched
+                birds[0].position = slingshot_pos
             if event.key == pygame.K_e:
                 RedBird = not RedBird
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -640,16 +649,16 @@ while running:
                     pygame.mixer.music.play(-1)  # Play the music indefinitely
                 music_playing = not music_playing  # Toggle the music state
 
-            if bird.position.get_distance(mouse_pos) < 20 and not bird_launched:
+            if birds[0].position.get_distance(mouse_pos) < 20 and not birds[0].bird_launched:
                 dragging = True
-                bird.velocity = (0, 0)  # Stop any falling during drag
+                birds[0].velocity = (0, 0)  # Stop any falling during drag
                 initial_mouse_pos = mouse_pos  # Set initial mouse position when dragging starts
-            if bird_launched and not RedBird:
+            if birds[0].bird_launched and not RedBird:
                 blue_bird_draw = True
-                bird1 = create_bird(bird.position.x, bird.position.y - 50, bird.velocity)
-                bird2 = create_bird(bird.position.x, bird.position.y + 50, bird.velocity)
+                bird1 = create_bird(birds[0].position.x, birds[0].position.y - 50, birds[0].velocity)
+                bird2 = create_bird(birds[0].position.x, birds[0].position.y + 50, birds[0].velocity)
         elif event.type == pygame.MOUSEBUTTONUP:
-            if dragging and initial_mouse_pos and not bird_launched:
+            if dragging and initial_mouse_pos and not birds[0].bird_launched:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 current_mouse_pos = pymunk.Vec2d(mouse_x, mouse_y)  # Get the current mouse position
                 drag_vector = current_mouse_pos - initial_mouse_pos  # Calculate the drag vector based on initial click position
@@ -659,19 +668,29 @@ while running:
 
                 # Calculate launch velocity and apply it to the bird
                 launch_velocity = -drag_vector.normalized() * (drag_vector.length / max_drag_distance * launch_power) *10
-                bird.velocity = launch_velocity
+                birds[0].velocity = launch_velocity
                 dragging = False
-                bird_launched = True  # Set bird as launched after release
+                birds[0].bird_launched = True  # Set bird as launched after release
                 initial_mouse_pos = None  # Store initial click position
                 bird_image = bird_fly_image
-
+    if lives == 0:
+        print("work")
+        no = show_no_messagebox()
+        running = False
     # Keep the bird floating until launched
-    if not bird_launched and not dragging:
-        bird.velocity = (0, 0)  # Ensure bird stays in place until launched
-        bird.position = slingshot_pos  # Reset bird position to the slingshot
+    if not birds[0].bird_launched and not dragging:
+        for bird in birds:
+            bird.velocity = (0,0)
+        birds[0].position = slingshot_pos  # Reset bird position to the slingshot
         for pig in levels[level_num-1][1]:
             pig.velocity = (0,0)
-
+    if birds[0].position.x > 1300 or birds[0].position.x < -100:
+        try:
+            time.sleep(1)
+        except Exception:
+            print("sleep no work")
+        birds.remove(birds[0])
+        lives-=1
     screen.fill((200, 220, 255))  # Blue background (sky)
     draw_bear_button()
     # Update physics
@@ -691,11 +710,11 @@ while running:
             drag_vector = drag_vector.normalized() * max_drag_distance
 
         # Set bird's position to slingshot position + drag vector
-        bird.position = slingshot_pos + drag_vector  # Update bird's position based on the drag
-        bird.velocity = (0, 0)  # Bird doesn't move while dragging
+        birds[0].position = slingshot_pos + drag_vector  # Update bird's position based on the drag
+        birds[0].velocity = (0, 0)  # Bird doesn't move while dragging
 
         # Draw the predicted trajectory while dragging
-        draw_trajectory(screen, bird, drag_vector)
+        draw_trajectory(screen, birds[0], drag_vector)
     # Draw the smiling sun in the background with rays
     draw_sun(screen)
     # Update the positions of the clouds
@@ -744,9 +763,12 @@ while running:
     # Draw the wooden slingshot with enhanced details
     draw_slingshot(screen)
 
-    draw_rubber_band(screen, bird.position, dragging)
+    if len(birds) > 0:
+        draw_rubber_band(screen, birds[0].position, dragging)
 
-    draw_bird(screen, bird)
+    for bird in birds:
+        draw_bird(screen, bird)
+
     if blue_bird_draw:
         draw_bird(screen, bird1)
         draw_bird(screen, bird2)
@@ -772,7 +794,7 @@ while running:
         else:
             levels[level_num-1][1].remove(pig)
     pygame.display.flip()
-    if len(levels[level_num-1][1]) == 0 and ((5, 5) > bird.velocity > (0, 0)):
+    if len(levels[level_num-1][1]) == 0 and ((5, 5) > birds[0].velocity > (0, 0)):
         no = show_no_messagebox()
         running = False
     clock.tick(50)
