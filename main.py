@@ -55,15 +55,20 @@ Bird = 0
 red_bird_image = pygame.image.load("BirdImage.png")  # Path to your uploaded image
 blue_bird_image = pygame.image.load("BlueGuy.png")  # Path to your uploaded image
 bomb_bird_image = pygame.image.load("BombGuy.png")
+chuck = pygame.image.load("Chuck.png")
 
 red_hit_image = pygame.image.load("BirdHit.png")
 blue_hit_image = pygame.image.load("BlueGuyHit.png")
 bomb_hit_1_image = pygame.image.load("BombGuyHit1.png")
 bomb_hit_2_image = pygame.image.load("BombGuyHit2.png")
+chuck_hit = pygame.image.load("ChuckHit.png")
 
 red_fly_image = pygame.image.load("BirdFlying1.png")
 blue_fly_image = pygame.image.load("BlueGuyFly.png")
 bomb_fly_image = pygame.image.load("BombGuyFly.png")
+chuck_fly = pygame.image.load("ChuckFly.png")
+
+chuck_fast = pygame.image.load("ChuckFast.png")
 
 bird_image = red_bird_image
 
@@ -72,6 +77,8 @@ hit_bird_image = red_hit_image
 bird_fly_image = red_fly_image
 
 blue_bird_draw = False
+
+chuck_power = False
 
 bird_rect = bird_image.get_rect()
 bear_button = pygame.Rect( 10, 10, 100, 100)  # Rect for bear button (x, y, width, height)
@@ -670,6 +677,8 @@ while running:
                 Bird = 1
             if event.key == pygame.K_3:
                 Bird = 2
+            if event.key == pygame.K_4:
+                Bird = 3
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
             if bear_button.collidepoint(event.pos):  # If bear button is clicked
@@ -687,6 +696,8 @@ while running:
                 blue_bird_draw = True
                 bird1 = create_bird(birds[0].position.x, birds[0].position.y - 50, birds[0].velocity)
                 bird2 = create_bird(birds[0].position.x, birds[0].position.y + 50, birds[0].velocity)
+            if birds[0].bird_launched and Bird == 3:
+                chuck_power = True
         elif event.type == pygame.MOUSEBUTTONUP:
             if dragging and initial_mouse_pos and not birds[0].bird_launched:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -704,11 +715,11 @@ while running:
                 initial_mouse_pos = None  # Store initial click position
                 bird_image = bird_fly_image
     if birds:
-        if Bird == 0:
+        if Bird == 0 and birds:
             bird_image = red_bird_image
             hit_bird_image = red_hit_image
             bird_fly_image = red_fly_image
-        elif Bird == 1:
+        elif Bird == 1 and birds:
             bird_image = blue_bird_image
             hit_bird_image = blue_hit_image
             bird_fly_image = blue_fly_image
@@ -717,6 +728,10 @@ while running:
             bird_image = bomb_bird_image
             hit_bird_image = bomb_hit_1_image
             bird_fly_image = bomb_fly_image
+        elif Bird == 3 and birds:
+            bird_image = chuck
+            hit_bird_image = chuck_hit
+            bird_fly_image = chuck_fly
         # Keep the bird floating until launched
         if not birds[0].bird_launched and not dragging:
             for bird in birds:
@@ -738,7 +753,6 @@ while running:
         # Update physics
         try: space.step(1 / 50)  # Simulate physics with a fixed time step
         except Exception: print("THE SPACE DIDNT STEP")
-
 
         # Update the bird's position while dragging
         if dragging and birds:
@@ -802,7 +816,7 @@ while running:
 
         current_time = pygame.time.get_ticks()
 
-        if Bird == 2 and bomb_exploded and not birds[0].has_exploded:
+        if birds and Bird == 2 and bomb_exploded and not birds[0].has_exploded:
             if current_time - explosion_timer >= 100 and birds:
                 print("done")
                 explode(space, birds[0].position)
@@ -813,9 +827,13 @@ while running:
             else:
                 bird_image = bomb_hit_1_image
 
-        if birds[0].bird_launched and birds[0].position.y > 700:
+        if birds and Bird == 3 and chuck_power and birds[0].bird_launched:
+            chuck_power = False
+            bird_image = chuck_fast
+            birds[0].velocity = (birds[0].velocity.x*1.5, birds[0].velocity.y)
+
+        if birds and birds[0].bird_launched and birds[0].position.y > 700:
             if birds[0].time > 0:
-                print(birds[0].time)
                 birds[0].time = birds[0].time-1
             else:
                 if birds:
