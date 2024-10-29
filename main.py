@@ -849,7 +849,6 @@ while running:
         if blue_bird_draw:
             draw_bird(screen, bird1)
             draw_bird(screen, bird2)
-
         # Use a copy of the list to avoid issues when removing items
         for block in levels[level_num-1][:][0]:
             if block.is_intact:
