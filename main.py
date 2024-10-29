@@ -1,6 +1,4 @@
 import time
-from venv import create
-
 import pygame
 import pymunk
 import pymunk.pygame_util
@@ -52,16 +50,20 @@ root.focus_force()
 root.title("Level Select")
 root.geometry("480x320+500+300")  # width x height + x + y
 
-RedBird = True
+Bird = 0
 
 red_bird_image = pygame.image.load("BirdImage.png")  # Path to your uploaded image
 blue_bird_image = pygame.image.load("BlueGuy.png")  # Path to your uploaded image
+bomb_bird_image = pygame.image.load("BombGuy.png")
 
 red_hit_image = pygame.image.load("BirdHit.png")
 blue_hit_image = pygame.image.load("BlueGuyHit.png")
+bomb_hit_1_image = pygame.image.load("BombGuyHit1.png")
+bomb_hit_2_image = pygame.image.load("BombGuyHit2.png")
 
 red_fly_image = pygame.image.load("BirdFlying1.png")
 blue_fly_image = pygame.image.load("BlueGuyFly.png")
+bomb_fly_image = pygame.image.load("BombGuyFly.png")
 
 bird_image = red_bird_image
 
@@ -116,6 +118,8 @@ level_num = 0
 medium_block_num = 0
 pig_image_num = 0
 lives = 3
+bomb_exploded = False
+explosion_timer = 0
 
 # Collision types
 BIRD_COLLISION_TYPE = 1
@@ -382,6 +386,8 @@ def create_bird(x, y, velocity):
     bird_shape.friction = 1.0
     bird_body.velocity = velocity
     bird_body.bird_launched = False
+    bird_body.has_exploded = False
+    bird_body.time = 100
     space.add(bird_body, bird_shape)
     return bird_body
 def draw_sun(screen):
@@ -454,17 +460,32 @@ def draw_rubber_band(screen, bird_pos, dragging):
         pygame.draw.line(screen, rubber_band_color, left_band_anchor, bird_pos, rubber_band_thickness)
         #Right rubber band
         pygame.draw.line(screen, rubber_band_color, right_band_anchor, bird_pos, rubber_band_thickness)
+def explode(space, bomb_position, radius=100, explosion_force=500):
+    for body in space.bodies:
+        distance = bomb_position.get_distance(body.position)
+        if distance < radius:
+            print("explode")
+            # Calculate the force based on the distance and direction
+            direction = body.position - bomb_position
+            direction = direction.normalized()  # Get the unit vector
+            force = explosion_force * (1 - distance / radius)
+            body.apply_impulse_at_world_point(direction * force, body.position)
 def handle_bird_block_collision(arbiter, space, data):
     """Callback function to handle bird-block collision."""
+    global bomb_exploded
     block_shape = arbiter.shapes[1]  # The block is the second shape in the collision pair
 
     velocity_threshold = 100  # A threshold velocity to consider the block as falling
 
     # Remove the block's body and shape from the space
     if birds[0].velocity.y > velocity_threshold or birds[0].velocity.x > velocity_threshold:
+        if Bird == 2 and not bomb_exploded:
+            global explosion_timer
+            explosion_timer = pygame.time.get_ticks()
+            bomb_exploded = True
         block_shape.body.medium_block_num += 1
         if block_shape.body.medium_block_num >= len(block_sprites):
-            space.remove(block_shape, block_shape.body)
+            space.remove(block_shape.body, block_shape)
             block_shape.body.is_intact = False
         else:
             block_shape.image = block_sprites[block_shape.body.medium_block_num]
@@ -472,7 +493,7 @@ def handle_bird_block_collision(arbiter, space, data):
     # Collision handler to detect bird hitting block
     def bird_hit_block(arbiter, space, data):
         global bird_image  # Modify global bird_image when the collision occurs
-        bird_image = hit_bird_image  # Change bird's image to the new one
+        bird_image = hit_bird_image# Change bird's image to the new one
         return True  # Return True to process the collision
 
     # Add the collision handler
@@ -489,7 +510,7 @@ def handle_block_ground_collision(arbiter, space, data):
     if block_body.velocity.y > falling_threshold or block_body.velocity.x > falling_threshold:
         block_shape.body.medium_block_num += 1
         if block_body.medium_block_num >= len(block_sprites):
-            space.remove(block_shape, block_shape.body)
+            space.remove(block_body, block_shape)
             block_body.is_intact = False
         else:
             block_shape.image = block_sprites[block_body.medium_block_num]
@@ -509,7 +530,7 @@ def handle_block_block_collision(arbiter, space, data):
     if block_body_1.velocity.y > falling_threshold or block_body_1.velocity.x > falling_threshold:
         block_body_1.medium_block_num += 1
         if block_body_1.medium_block_num >= len(block_sprites):
-            space.remove(block_body_1)
+            space.remove(block_body_1, block_shape_1)
             block_body_1.is_intact = False
         else:
             block_body_1.image = block_sprites[block_body_1.medium_block_num]
@@ -518,20 +539,25 @@ def handle_block_block_collision(arbiter, space, data):
     elif block_body_2.velocity.y > falling_threshold or block_body_2.velocity.x > falling_threshold:
         block_body_2.medium_block_num += 1
         if block_body_2.medium_block_num >= len(block_sprites):
-            space.remove(block_body_2)
+            space.remove(block_body_2, block_shape_2)
             block_body_2.is_intact = False
         else:
             block_body_2.image = block_sprites[block_body_2.medium_block_num]
 
     return True  # Continue with the normal collision processing
 def handle_bird_pig_collision(arbiter, space, data):
+    global bomb_exploded
     pig_shape = arbiter.shapes[1]
 
     velocity_threshold = 1  # A threshold velocity to consider the block as falling
 
     # Remove the block's body and shape from the space
     if birds[0].velocity.y > velocity_threshold or birds[0].velocity.x > velocity_threshold:
-        space.remove(pig_shape, pig_shape.body)
+        if Bird == 2 and not bomb_exploded:
+            global explosion_timer
+            explosion_timer = pygame.time.get_ticks()
+            bomb_exploded = True
+        space.remove(pig_shape.body, pig_shape)
         pig_shape.body.dead = True
 
     # Collision handler to detect bird hitting block
@@ -554,7 +580,7 @@ def handle_pig_ground_collision(arbiter, space, data):
     if pig_body.velocity.y > falling_threshold or pig_body.velocity.x > falling_threshold:
         pig_shape.body.pig_image_num += 1
         if pig_body.pig_image_num >= len(pig_sprites):
-            space.remove(pig_shape, pig_shape.body)
+            space.remove(pig_body, pig_shape)
             pig_body.dead = True
         else:
             pig_shape.image = pig_sprites[pig_body.pig_image_num]
@@ -567,12 +593,12 @@ def handle_pig_block_collision(arbiter, space, data):
     block_body = block_shape.body
     pig_body = pig_shape.body
 
-    falling_threshold = 100  # A threshold velocity to consider a block falling
+    falling_threshold = 1  # A threshold velocity to consider a block falling
 
     if block_body.velocity.y > falling_threshold or block_body.velocity.x > falling_threshold:
         block_body.medium_block_num += 1
         if block_body.medium_block_num >= len(block_sprites):
-            space.remove(block_body)
+            space.remove(block_body, block_shape)
             block_body.is_intact = False
         else:
             block_body.image = block_sprites[block_body.medium_block_num]
@@ -580,7 +606,7 @@ def handle_pig_block_collision(arbiter, space, data):
     elif pig_body.velocity.y > falling_threshold or pig_body.velocity.x > falling_threshold:
         pig_body.pig_image_num += 1
         if pig_body.pig_image_num >= len(pig_sprites):
-            space.remove(pig_body)
+            space.remove(pig_body, block_shape)
             pig_body.dead = True
         else:
             pig_body.image = pig_sprites[pig_body.pig_image_num]
@@ -589,8 +615,8 @@ def handle_pig_block_collision(arbiter, space, data):
 
 bird = create_bird(100, 600, (0,0))
 
-bird_num_2 = create_bird(200, 700, (0,0))
-bird_num_3 = create_bird(250, 700, (0,0))
+bird_num_2 = create_bird(200, 750, (0,0))
+bird_num_3 = create_bird(250, 750, (0,0))
 
 birds = [bird, bird_num_2, bird_num_3]
 
@@ -638,8 +664,12 @@ while running:
                 initial_mouse_pos = None  # Store initial click position
                 birds[0].bird_launched = False  # Track whether the bird has been launched
                 birds[0].position = slingshot_pos
-            if event.key == pygame.K_e:
-                RedBird = not RedBird
+            if event.key == pygame.K_1:
+                Bird = 0
+            if event.key == pygame.K_2:
+                Bird = 1
+            if event.key == pygame.K_3:
+                Bird = 2
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
             if bear_button.collidepoint(event.pos):  # If bear button is clicked
@@ -653,7 +683,7 @@ while running:
                 dragging = True
                 birds[0].velocity = (0, 0)  # Stop any falling during drag
                 initial_mouse_pos = mouse_pos  # Set initial mouse position when dragging starts
-            if birds[0].bird_launched and not RedBird:
+            if birds[0].bird_launched and Bird == 1:
                 blue_bird_draw = True
                 bird1 = create_bird(birds[0].position.x, birds[0].position.y - 50, birds[0].velocity)
                 bird2 = create_bird(birds[0].position.x, birds[0].position.y + 50, birds[0].velocity)
@@ -673,130 +703,150 @@ while running:
                 birds[0].bird_launched = True  # Set bird as launched after release
                 initial_mouse_pos = None  # Store initial click position
                 bird_image = bird_fly_image
-    if lives == 0:
-        print("work")
-        no = show_no_messagebox()
-        running = False
-    # Keep the bird floating until launched
-    if not birds[0].bird_launched and not dragging:
-        for bird in birds:
-            bird.velocity = (0,0)
-        birds[0].position = slingshot_pos  # Reset bird position to the slingshot
+    if birds:
+        if Bird == 0:
+            bird_image = red_bird_image
+            hit_bird_image = red_hit_image
+            bird_fly_image = red_fly_image
+        elif Bird == 1:
+            bird_image = blue_bird_image
+            hit_bird_image = blue_hit_image
+            bird_fly_image = blue_fly_image
+        elif Bird == 2 and birds:
+            birds[0].mass = 5
+            bird_image = bomb_bird_image
+            hit_bird_image = bomb_hit_1_image
+            bird_fly_image = bomb_fly_image
+        # Keep the bird floating until launched
+        if not birds[0].bird_launched and not dragging:
+            for bird in birds:
+                bird.velocity = (0,0)
+            birds[0].position = slingshot_pos  # Reset bird position to the slingshot
+        if birds[0].position.x > 1300 or birds[0].position.x < -100:
+            try:time.sleep(1)
+            except Exception: print("sleep no work")
+            space.remove(birds[0])
+            birds.remove(birds[0])
+            lives-=1
         for pig in levels[level_num-1][1]:
-            pig.velocity = (0,0)
-    if birds[0].position.x > 1300 or birds[0].position.x < -100:
-        try:
-            time.sleep(1)
-        except Exception:
-            print("sleep no work")
-        birds.remove(birds[0])
-        lives-=1
-    screen.fill((200, 220, 255))  # Blue background (sky)
-    draw_bear_button()
-    # Update physics
-    try:
-        space.step(1 / 50.0)  # Simulate physics with a fixed time step
-    except Exception:
-        print("THE SPACE DIDNT STEP")
+            if pig.position.x > 1300:
+                space.remove(pig)
+                levels[level_num-1][1].remove(pig)
 
-    # Update the bird's position while dragging
-    if dragging:
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        current_mouse_pos = pymunk.Vec2d(mouse_x, mouse_y)  # Get current mouse position
-        drag_vector = current_mouse_pos - initial_mouse_pos  # Calculate drag vector based on the initial click
+        screen.fill((200, 220, 255))  # Blue background (sky)
+        draw_bear_button()
+        # Update physics
+        try: space.step(1 / 50)  # Simulate physics with a fixed time step
+        except Exception: print("THE SPACE DIDNT STEP")
 
-        # Ensure we do not exceed max drag distance
-        if drag_vector.length > max_drag_distance:
-            drag_vector = drag_vector.normalized() * max_drag_distance
 
-        # Set bird's position to slingshot position + drag vector
-        birds[0].position = slingshot_pos + drag_vector  # Update bird's position based on the drag
-        birds[0].velocity = (0, 0)  # Bird doesn't move while dragging
+        # Update the bird's position while dragging
+        if dragging and birds:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            current_mouse_pos = pymunk.Vec2d(mouse_x, mouse_y)  # Get current mouse position
+            drag_vector = current_mouse_pos - initial_mouse_pos  # Calculate drag vector based on the initial click
 
-        # Draw the predicted trajectory while dragging
-        draw_trajectory(screen, birds[0], drag_vector)
-    # Draw the smiling sun in the background with rays
-    draw_sun(screen)
-    # Update the positions of the clouds
-    cloud1_pos[0] += cloud_speed * (1 / 50.0)  # Speed * frame time
-    cloud2_pos[0] += cloud_speed * (1 / 50.0)
-    cloud3_pos[0] += cloud_speed * (1 / 50.0)
-    i = 1
-    for cloud_pos in cloudList:
-        draw_cloud(screen, cloud_pos[0], cloud_pos[1], 0.2)# You can vary the scale if needed
-        cloud_pos[0] += cloud_speed * (i/ 100.0)
-        i+=1
+            # Ensure we do not exceed max drag distance
+            if drag_vector.length > max_drag_distance:
+                drag_vector = drag_vector.normalized() * max_drag_distance
 
-    # Respawn clouds on the left side when they go off the right side of the screen
-    if cloud1_pos[0] > 1700:
-        cloud1_pos[0] = -800  # Respawn slightly off the screen on the left side
-        cloud1_pos[1] = random.randint(-100, 150)  # Randomize the height for variety
-    if cloud2_pos[0] > 1700:
-        cloud2_pos[0] = -300
-        cloud2_pos[1] = random.randint(-100, 150)
-    if cloud3_pos[0] > 1700:
-        cloud3_pos[0] = -300
-        cloud3_pos[1] = random.randint(-100, 150)
-    for n in cloudList:
-        if cloud_pos[0] > 1700:
-            cloud_pos[0] = -100
+            # Set bird's position to slingshot position + drag vector
+            birds[0].position = slingshot_pos + drag_vector  # Update bird's position based on the drag
+            birds[0].velocity = (0, 0)  # Bird doesn't move while dragging
 
-    # Draw moving clouds
-    draw_cloud(screen, cloud1_pos[0], cloud1_pos[1], 0.3)
-    draw_cloud(screen, cloud2_pos[0], cloud2_pos[1], 0.1)
-    draw_cloud(screen, cloud3_pos[0], cloud3_pos[1], 0.1)
-    for n in cloudList:
-        draw_cloud(screen,cloud_pos[0],cloud_pos[1],0.1)
+            # Draw the predicted trajectory while dragging
+            draw_trajectory(screen, birds[0], drag_vector)
+        # Draw the smiling sun in the background with rays
+        draw_sun(screen)
+        # Update the positions of the clouds
+        cloud1_pos[0] += cloud_speed * (1 / 50.0)  # Speed * frame time
+        cloud2_pos[0] += cloud_speed * (1 / 50.0)
+        cloud3_pos[0] += cloud_speed * (1 / 50.0)
+        i = 1
+        for cloud_pos in cloudList:
+            draw_cloud(screen, cloud_pos[0], cloud_pos[1], 0.2)# You can vary the scale if needed
+            cloud_pos[0] += cloud_speed * (i/ 100.0)
+            i+=1
 
-    # Draw the custom floor
-    draw_floor(screen, ground_shape)
+        # Respawn clouds on the left side when they go off the right side of the screen
+        if cloud1_pos[0] > 1700:
+            cloud1_pos[0] = -800  # Respawn slightly off the screen on the left side
+            cloud1_pos[1] = random.randint(-100, 150)  # Randomize the height for variety
+        if cloud2_pos[0] > 1700:
+            cloud2_pos[0] = -300
+            cloud2_pos[1] = random.randint(-100, 150)
+        if cloud3_pos[0] > 1700:
+            cloud3_pos[0] = -300
+            cloud3_pos[1] = random.randint(-100, 150)
+        for n in cloudList:
+            if cloud_pos[0] > 1700:
+                cloud_pos[0] = -100
 
-    # Draw the grass on top of the ground, and clouds
-    draw_grass(screen, 40, ground_shape, (34, 139, 34))
-    draw_grass(screen, 22, ground_shape, (4, 109, 4))
-    draw_grass(screen, 0, ground_shape, (34, 139, 34))
+        # Draw moving clouds
+        draw_cloud(screen, cloud1_pos[0], cloud1_pos[1], 0.3)
+        draw_cloud(screen, cloud2_pos[0], cloud2_pos[1], 0.1)
+        draw_cloud(screen, cloud3_pos[0], cloud3_pos[1], 0.1)
+        for n in cloudList: draw_cloud(screen,cloud_pos[0],cloud_pos[1],0.1)
 
-    # Draw bear button for sound control
-    def draw_bear_button():
-        screen.blit(bear_img, (bear_button.x, bear_button.y))
+        # Draw the custom floor
+        draw_floor(screen, ground_shape)
 
-    # Draw the wooden slingshot with enhanced details
-    draw_slingshot(screen)
+        # Draw the grass on top of the ground, and clouds
+        draw_grass(screen, 40, ground_shape, (34, 139, 34))
+        draw_grass(screen, 22, ground_shape, (4, 109, 4))
+        draw_grass(screen, 0, ground_shape, (34, 139, 34))
 
-    if len(birds) > 0:
-        draw_rubber_band(screen, birds[0].position, dragging)
+        # Draw bear button for sound control
+        def draw_bear_button():
+            screen.blit(bear_img, (bear_button.x, bear_button.y))
 
-    for bird in birds:
-        draw_bird(screen, bird)
+        current_time = pygame.time.get_ticks()
 
-    if blue_bird_draw:
-        draw_bird(screen, bird1)
-        draw_bird(screen, bird2)
+        if Bird == 2 and bomb_exploded and not birds[0].has_exploded:
+            if current_time - explosion_timer >= 100 and birds:
+                print("done")
+                explode(space, birds[0].position)
+                bomb_exploded = False
+                birds[0].has_exploded = True
+                space.remove(birds[0])
+                birds.remove(birds[0])
+            else:
+                bird_image = bomb_hit_1_image
 
-    if RedBird:
-        bird_image = red_bird_image
-        hit_bird_image = red_hit_image
-        bird_fly_image = red_fly_image
-    elif not RedBird:
-        bird_image = blue_bird_image
-        hit_bird_image = blue_hit_image
-        bird_fly_image = blue_fly_image
+        if birds[0].bird_launched and birds[0].position.y > 700:
+            if birds[0].time > 0:
+                print(birds[0].time)
+                birds[0].time = birds[0].time-1
+            else:
+                if birds:
+                    birds.remove(birds[0])
+        # Draw the wooden slingshot with enhanced details
+        draw_slingshot(screen)
 
-    # Use a copy of the list to avoid issues when removing items
-    for block in levels[level_num-1][:][0]:
-        if block.is_intact:
-            draw_blocks(screen, block)
-        else:
-            levels[level_num-1][0].remove(block)
-    for pig in levels[level_num-1][:][1]:
-        if not pig.dead:
-            draw_pigs(screen, pig)
-        else:
-            levels[level_num-1][1].remove(pig)
-    pygame.display.flip()
-    if len(levels[level_num-1][1]) == 0 and ((5, 5) > birds[0].velocity > (0, 0)):
+        if birds: draw_rubber_band(screen, birds[0].position, dragging)
+        for bird in birds:
+            if not bird.has_exploded:
+                draw_bird(screen, bird)
+
+        if blue_bird_draw:
+            draw_bird(screen, bird1)
+            draw_bird(screen, bird2)
+
+        # Use a copy of the list to avoid issues when removing items
+        for block in levels[level_num-1][:][0]:
+            if block.is_intact:
+                draw_blocks(screen, block)
+            else:
+                levels[level_num-1][0].remove(block)
+        for pig in levels[level_num-1][:][1]:
+            if not pig.dead:
+                draw_pigs(screen, pig)
+            else:
+                levels[level_num-1][1].remove(pig)
+    if not birds or (len(levels[level_num - 1][1]) == 0 and ((5, 5) > birds[0].velocity > (0, 0))):
         no = show_no_messagebox()
         running = False
+    pygame.display.flip()
     clock.tick(50)
 
 
