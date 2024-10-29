@@ -9,39 +9,61 @@ from tkinter import simpledialog
 
 root = tkinter.Tk()
 
+
 class NoButtonDialog(simpledialog.Dialog):
     def body(self, master):
-        tkinter.Label(master, text="PLay Again?").pack()
+        tkinter.Label(master, text="Play Again? Click twice.").pack()
         return None
+
     def buttonbox(self):
         box = tkinter.Frame(self)
+
+        yes_button = tkinter.Button(box, text="Yes", width=10, command=self.yes)
+        yes_button.pack(side=tkinter.LEFT, padx=5, pady=5)
 
         no_button = tkinter.Button(box, text="No", width=10, command=self.no)
         no_button.pack(side=tkinter.LEFT, padx=5, pady=5)
 
         box.pack()
+
+    def yes(self):
+        self.result = "Yes"
+        self.destroy()
+
     def no(self):
         self.result = "No"
         self.destroy()
+
+
 def show_no_messagebox():
     root = tkinter.Tk()
     root.withdraw()  # Hide the main window
     dialog = NoButtonDialog(root)
     return dialog.result
 
+
+
+
+
 # Initialize pygame
 pygame.init()
 pygame.mixer.init()
 pygame.font.init()
 
-pygame.mixer.music.load('/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/music.mp3')
+pygame.mixer.music.load('sound/music.mp3')
+rock_sound = pygame.mixer.Sound('rock_impact.mp3')
+whoosh = pygame.mixer.Sound('sound/whoosh.wav')
+secret_song = pygame.mixer.Sound('sound/secret.MP3')
+jazz = pygame.mixer.Sound('chill_jazz.mp3')
 pygame.mixer.music.set_volume(1.0)
+rock_sound.set_volume(1.0)
 sound_on = False  # Initially, the sound is off
 
 # Set up the display
-screen = pygame.display.set_mode((1200, 800))
+screen = pygame.display.set_mode((1200,800))
 clock = pygame.time.Clock()
 draw_options = pymunk.pygame_util.DrawOptions(screen)
+
 
 root.lift()
 root.focus_force()
@@ -49,26 +71,17 @@ root.focus_force()
 root.title("Level Select")
 root.geometry("480x320+500+300")  # width x height + x + y
 
-class Bear:
-    def __init__(self, x, y):
-        self.image = pygame.image.load('cuteBear.png')  # Load bear button image
-        self.rect = self.image.get_rect(center=(x, y))
 
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
 
-    def is_clicked(self, mouse_pos):
-        return self.rect.collidepoint(mouse_pos)
-
-bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdImage.png")  # Path to your uploaded image
+bird_image = pygame.image.load("BirdImage.png")  # Path to your uploaded image
 bird_rect = bird_image.get_rect()
 bear_button = pygame.Rect( 10, 10, 100, 100)  # Rect for bear button (x, y, width, height)
 bear_img = pygame.image.load('cuteBear.png')  # Use a bear image file here
 bear_img = pygame.transform.scale(bear_img, (100, 100))  # Scale it to fit the button
 music_playing = False  # Music starts off
-hit_bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdHit.png")
+hit_bird_image = pygame.image.load("BirdHit.png")
 
-cloud_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/cloud.png")
+cloud_image = pygame.image.load("cloud.png")
 cloud_rect = cloud_image.get_rect()  # Get the dimensions of the cloud
 # Cloud initial positions and velocities
 cloud1_pos = [900, 0]  # x, y
@@ -81,20 +94,20 @@ for n in range(5):
     cloudList.append(cloud_pos)
 cloud_speed = 30  # Speed at which the clouds move (pixels per second)
 
-medium_block = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlock.png")
+medium_block = pygame.image.load("MedBlock.png")
 medium_block = pygame.transform.scale(medium_block, (100,50))
-medium_block_hit_1 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlockHit1.png")
+medium_block_hit_1 = pygame.image.load("MedBlockHit1.png")
 medium_block_hit_1 = pygame.transform.scale(medium_block_hit_1, (100,50))
-medium_block_hit_2 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlockHit2.png")
+medium_block_hit_2 = pygame.image.load("MedBlockHit2.png")
 medium_block_hit_2 = pygame.transform.scale(medium_block_hit_2, (100,50))
-medium_block_hit_3 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlockHit3.png")
+medium_block_hit_3 = pygame.image.load("MedBlockHit3.png")
 medium_block_hit_3 = pygame.transform.scale(medium_block_hit_3, (100,50))
 block_sprites = [medium_block, medium_block_hit_1, medium_block_hit_2, medium_block_hit_3]
 
-pig_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/Pig.png")
-pig_image_hit_1 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/PigHit1.png")
-pig_image_hit_2 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/PigHit2.png")
-pig_image_hit_3 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/PigHit3.png")
+pig_image = pygame.image.load("Pig.png")
+pig_image_hit_1 = pygame.image.load("PigHit1.png")
+pig_image_hit_2 = pygame.image.load("PigHit2.png")
+pig_image_hit_3 = pygame.image.load("PigHit3.png")
 pig_sprites = [pig_image, pig_image_hit_1, pig_image_hit_2, pig_image_hit_3]
 
 # Set up the space
@@ -112,6 +125,28 @@ BIRD_COLLISION_TYPE = 1
 BLOCK_COLLISION_TYPE = 2
 GROUND_COLLISION_TYPE = 3
 PIG_COLLISION_TYPE = 4
+
+
+def reset_game_state(space, levels, level_num):
+    # Remove existing level objects from the space
+    for block in levels[level_num - 2][0]:  # Previous level's blocks
+        if block.created:
+            space.remove(block, block.shape)
+            block.created = False
+    for pig in levels[level_num - 2][1]:  # Previous level's pigs
+        if pig.created:
+            space.remove(pig, pig.shape)
+            pig.created = False
+
+    # Reset bird state
+    global bird_launched
+    bird_launched = False
+    bird.position = slingshot_pos  # Reset bird position if needed
+    bird.velocity = (0, 0)  # Stop any motion from the bird
+
+    # Load the new level
+    load_level(levels, level_num)
+
 
 def load_level(levels, level_num1):
     if levels:
@@ -284,8 +319,8 @@ def on_button_click6():
     load_level(levels, level_num)
     root.destroy()
 
-image = PhotoImage(file="/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/Level1.png") # TODO alter for differnt people
-level_background_image = PhotoImage(file="/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/LevelBackground.png") # TODO alter for differnt people
+image = PhotoImage(file="Level1.png") # TODO alter for differnt people
+level_background_image = PhotoImage(file="LevelBackground.png") # TODO alter for differnt people
 
 label1 = Label( root, image = level_background_image)
 label1.place(x = 0, y = 0)
@@ -338,7 +373,7 @@ def draw_grass(screen, y, ground_shape, color):
                            (x + 20, y + ground_top - 5 * (5 + 3 * n))]
             pygame.draw.polygon(screen, color, grass_blade)
 def draw_cloud(screen, x, y, scale=1.0):
-    """Draws a cloud using a PNG at the specified position and scale."""
+    "Draws a cloud using a PNG at the specified position and scale."
     # Scale the cloud image
     scaled_cloud = pygame.transform.scale(cloud_image, (int(cloud_rect.width * scale), int(cloud_rect.height * scale)))
 
@@ -414,7 +449,7 @@ def draw_slingshot(screen):
     pygame.draw.line(screen, shadow_color, (95, 720), (95, 750), 2)  # Grain on the left side of the base
     pygame.draw.line(screen, shadow_color, (105, 720), (105, 750), 2)  # Grain on the right side of the base
 def draw_trajectory(surface, bird_body, drag_vector, steps=10, step_size=0.1):
-    """Draws the trajectory of the bird using small dots."""
+    "Draws the trajectory of the bird using small dots."
     # Launch power based on drag
     launch_power_scaled = drag_vector.length / max_drag_distance * launch_power
     initial_velocity = -drag_vector.normalized() * launch_power_scaled * 10  # Calculate launch velocity
@@ -444,7 +479,7 @@ def draw_rubber_band(screen, bird_pos, dragging):
         #Right rubber band
         pygame.draw.line(screen, rubber_band_color, right_band_anchor, bird_pos, rubber_band_thickness)
 def handle_bird_block_collision(arbiter, space, data):
-    """Callback function to handle bird-block collision."""
+    "Callback function to handle bird-block collision."
     block_shape = arbiter.shapes[1]  # The block is the second shape in the collision pair
 
     velocity_threshold = 100  # A threshold velocity to consider the block as falling
@@ -485,7 +520,7 @@ def handle_block_ground_collision(arbiter, space, data):
 
     return True
 def handle_block_block_collision(arbiter, space, data):
-    """Callback function to handle block-block collision."""
+    "Callback function to handle block-block collision."
     block_shape_1 = arbiter.shapes[0]  # The first block in the collision pair
     block_shape_2 = arbiter.shapes[1]  # The second block in the collision pair
 
@@ -612,6 +647,7 @@ launch_power = 100
 initial_mouse_pos = None  # Store initial click position
 bird_launched = False  # Track whether the bird has been launched
 while running:
+
     draw_bear_button()  # Draw the bear button
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -626,7 +662,11 @@ while running:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
             if bear_button.collidepoint(event.pos):  # If bear button is clicked
-                if music_playing:
+                if (level_num == 5):
+                    secret_song.play()
+                elif(level_num == 2):
+                    jazz.play()
+                elif music_playing:
                     pygame.mixer.music.stop()  # Stop the music
                 else:
                     pygame.mixer.music.play(-1)  # Play the music indefinitely
@@ -650,8 +690,9 @@ while running:
                 bird.velocity = launch_velocity
                 dragging = False
                 bird_launched = True  # Set bird as launched after release
+                whoosh.play()
                 initial_mouse_pos = None  # Store initial click position
-                bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdFlying1.png")  # Path to your uploaded image
+                bird_image = pygame.image.load("BirdFlying1.png")  # Path to your uploaded image
 
     # Keep the bird floating until launched
     if not bird_launched and not dragging:
@@ -741,16 +782,27 @@ while running:
         if block.is_intact:
             draw_blocks(screen, block)
         else:
+            # Play the rock sound once
             levels[level_num-1][0].remove(block)
     for pig in levels[level_num-1][:][1]:
         if not pig.dead:
             draw_pigs(screen, pig)
         else:
+            rock_sound.play()  # Play the rock sound once
             levels[level_num-1][1].remove(pig)
     pygame.display.flip()
     if len(levels[level_num-1][1]) == 0 and ((5, 5) > bird.velocity > (0, 0)):
-        no = show_no_messagebox()
-        running = False
+        if show_no_messagebox() == "Yes":
+                # Move to the next level
+                running = True
+                level_num += 1
+
+                # Clear old level objects and load new level
+                reset_game_state(space, levels, level_num)
+
+        if show_no_messagebox() == "No":
+            running = False
+
     clock.tick(50)
 
 
