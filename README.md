@@ -2,3 +2,8 @@ cloud image credits to <a href="https://www.freepik.com/free-vector/beautiful-ca
 song credits to Black Sabbath
 
 Sound effects taken from the game "Street Fighter II: The world Warrior" (�1991 Capcom)
+
+Sprite credits to Rovio Entertainment Oyj
+
+Press keys 1,2,3, and 4 to swap birds
+Press the bear in the corner for cool music
