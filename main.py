@@ -44,10 +44,10 @@ pygame.init()
 pygame.mixer.init()
 pygame.font.init()
 
-pygame.mixer.music.load('sound/music.mp3')
+pygame.mixer.music.load('music.mp3')
 rock_sound = pygame.mixer.Sound('rock_impact.mp3')
-whoosh = pygame.mixer.Sound('sound/whoosh.wav')
-secret_song = pygame.mixer.Sound('sound/secret.MP3')
+whoosh = pygame.mixer.Sound('whoosh.wav')
+secret_song = pygame.mixer.Sound('secret.MP3')
 jazz = pygame.mixer.Sound('chill_jazz.mp3')
 pygame.mixer.music.set_volume(1.0)
 rock_sound.set_volume(1.0)
@@ -165,7 +165,6 @@ def reset_game_state(space, levels, level_num):
     bird.velocity = (0, 0)  # Stop any motion from the bird
     # Load the new level
     load_level(levels, level_num)
-
 def load_level(levels, level_num1):
     if levels:
         for block1 in levels[level_num1-1]:
@@ -896,15 +895,15 @@ while running:
             if not pig.dead:
                 draw_pigs(screen, pig)
             else:
+                rock_sound.play()  # Play the rock sound once
                 levels[level_num-1][1].remove(pig)
-        rock_sound.play()  # Play the rock sound once
     if not birds or (len(levels[level_num - 1][1]) == 0 and ((5, 5) > birds[0].velocity > (0, 0))):
-        # if show_no_messagebox() == "Yes": #TODO fix the new level stuff to incorperate the stuff
-        #     # Move to the next level
-        #     running = True
-        #     level_num += 1
-        #     # Clear old level objects and load new level
-        #     reset_game_state(space, levels, level_num)
+        if show_no_messagebox() == "Yes": #TODO fix the new level stuff to incorperate the stuff
+            # Move to the next level
+            running = True
+            level_num += 1
+            # Clear old level objects and load new level
+            reset_game_state(space, levels, level_num)
         if show_no_messagebox() == "No":
             running = False
     pygame.display.flip()
