@@ -316,7 +316,11 @@ block_list6 = [blocks(600, 700, 50, 100, True, False), blocks(650, 700, 50, 100,
 pig_list6= [pig(900, 720, False, False)]
 level_six = [block_list6, pig_list6]
 
-levels = [level_one, level_two, level_three, level_four, level_five, level_six]
+block_list7 = [blocks(1000, 700, 100, 50, False, False)]
+pig_list7= [pig(1000, 700, False, False)]
+win = [block_list7, pig_list7]
+
+levels = [level_one, level_two, level_three, level_four, level_five, level_six, win]
 
 def on_button_click1():
     global level_num
@@ -702,6 +706,24 @@ def draw_bear_button():
 left_band_anchor = (65, 620)  # Left side of the slingshot
 right_band_anchor = (135, 620)  # Right side of the slingshot
 
+# Set up the font and size
+font = pygame.font.Font(None, 36)  # None loads default font, 36 is the font size
+font2 = pygame.font.Font(None, 300)  # None loads default font, 36 is the font size
+
+# Render text
+text = font.render("Click 1 for Red", True, "red")  # True for anti-aliasing
+text2 = font.render("Click 2 for The Blues", True, "blue")  # True for anti-aliasing
+text3 = font.render("Click 3 for Bomb", True, "black")  # True for anti-aliasing
+text4 = font.render("Click 4 for Chuck", True, "yellow")  # True for anti-aliasing
+win = font2.render("YOU WIN", True, "black")  # True for anti-aliasing
+
+# Get the text rectangle and position it
+text_rect = text.get_rect(center=(200, 50))
+text_rect2 = text2.get_rect(center=(420, 50))
+text_rect3 = text3.get_rect(center=(670, 50))
+text_rect4 = text4.get_rect(center=(900, 50))
+win_rect = win.get_rect(center=(550, 400))
+
 # Main loop
 running = True
 dragging = False
@@ -769,10 +791,12 @@ while running:
                 bird_image = bird_fly_image
     if birds:
         if Bird == 0 and birds:
+            birds[0].mass = 1
             bird_image = red_bird_image
             hit_bird_image = red_hit_image
             bird_fly_image = red_fly_image
         elif Bird == 1 and birds:
+            birds[0].mass = 1
             bird_image = blue_bird_image
             hit_bird_image = blue_hit_image
             bird_fly_image = blue_fly_image
@@ -782,6 +806,7 @@ while running:
             hit_bird_image = bomb_hit_1_image
             bird_fly_image = bomb_fly_image
         elif Bird == 3 and birds:
+            birds[0].mass = 1
             bird_image = chuck
             hit_bird_image = chuck_hit
             bird_fly_image = chuck_fly
@@ -858,6 +883,14 @@ while running:
         draw_cloud(screen, cloud2_pos[0], cloud2_pos[1], 0.1)
         draw_cloud(screen, cloud3_pos[0], cloud3_pos[1], 0.1)
         for n in cloudList: draw_cloud(screen,cloud_pos[0],cloud_pos[1],0.1)
+
+        if not level_num == 7:
+            screen.blit(text, text_rect)
+            screen.blit(text2, text_rect2)
+            screen.blit(text3, text_rect3)
+            screen.blit(text4, text_rect4)
+        else:
+            screen.blit(win, win_rect)
 
         # Draw the custom floor
         draw_floor(screen, ground_shape)
