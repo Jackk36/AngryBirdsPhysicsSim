@@ -159,10 +159,23 @@ def reset_game_state(space, levels, level_num):
             space.remove(pig, pig.shape)
             pig.created = False
     # Reset bird state
+    while len(birds) > 0:
+        birds.remove(birds[0])
+
+    bird = create_bird(100, 600, (0, 0))
+
+    bird_2 = create_bird(200, 750, (0, 0))
+    bird_3 = create_bird(250, 750, (0, 0))
+
+    birds.append(bird)
+    birds.append(bird_2)
+    birds.append(bird_3)
+
     global bird_launched
     bird_launched = False
     bird.position = slingshot_pos  # Reset bird position if needed
     bird.velocity = (0, 0)  # Stop any motion from the bird
+
     # Load the new level
     load_level(levels, level_num)
 def load_level(levels, level_num1):
@@ -898,9 +911,8 @@ while running:
                 rock_sound.play()  # Play the rock sound once
                 levels[level_num-1][1].remove(pig)
     if not birds or (len(levels[level_num - 1][1]) == 0 and ((5, 5) > birds[0].velocity > (0, 0))):
-        if show_no_messagebox() == "Yes": #TODO fix the new level stuff to incorperate the stuff
+        if show_no_messagebox() == "Yes":
             # Move to the next level
-            running = True
             level_num += 1
             # Clear old level objects and load new level
             reset_game_state(space, levels, level_num)
