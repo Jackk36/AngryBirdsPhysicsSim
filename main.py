@@ -537,6 +537,7 @@ def handle_bird_block_collision(arbiter, space, data):
         block_shape.body.medium_block_num += 1
         if block_shape.body.medium_block_num >= len(block_sprites):
             space.remove(block_shape.body, block_shape)
+            block_shape.body.created = False
             block_shape.body.is_intact = False
         else:
             block_shape.image = block_sprites[block_shape.body.medium_block_num]
@@ -563,6 +564,7 @@ def handle_block_ground_collision(arbiter, space, data):
         if block_body.medium_block_num >= len(block_sprites):
             space.remove(block_body, block_shape)
             block_body.is_intact = False
+            block_body.created = False
         else:
             block_shape.image = block_sprites[block_body.medium_block_num]
 
@@ -583,6 +585,7 @@ def handle_block_block_collision(arbiter, space, data):
         if block_body_1.medium_block_num >= len(block_sprites):
             space.remove(block_body_1, block_shape_1)
             block_body_1.is_intact = False
+            block_body_1.created = False
         else:
             block_body_1.image = block_sprites[block_body_1.medium_block_num]
 
@@ -592,6 +595,7 @@ def handle_block_block_collision(arbiter, space, data):
         if block_body_2.medium_block_num >= len(block_sprites):
             space.remove(block_body_2, block_shape_2)
             block_body_2.is_intact = False
+            block_body_2.created = False
         else:
             block_body_2.image = block_sprites[block_body_2.medium_block_num]
 
@@ -796,6 +800,10 @@ while running:
             if pig.position.x > 1300:
                 space.remove(pig)
                 levels[level_num-1][1].remove(pig)
+        for block in levels[level_num-1][1]:
+            if block.position.x > 1200:
+                space.remove(block)
+                block.created = False
 
         screen.fill((200, 220, 255))  # Blue background (sky)
         draw_bear_button()
