@@ -95,6 +95,15 @@ blue_bird_draw = False
 chuck_power = False
 
 bird_rect = bird_image.get_rect()
+
+poof_1 = pygame.image.load("Poof1.png")
+poof_2 = pygame.image.load("Poof2.png")
+poof_3 = pygame.image.load("Poof3.png")
+
+explode_1 = pygame.image.load("Explode1.png")
+explode_2 = pygame.image.load("Explode2.png")
+explode_3 = pygame.image.load("Explode3.png")
+
 bear_button = pygame.Rect( 10, 10, 100, 100)  # Rect for bear button (x, y, width, height)
 bear_img = pygame.image.load('cuteBear.png')  # Use a bear image file here
 bear_img = pygame.transform.scale(bear_img, (100, 100))  # Scale it to fit the button
@@ -418,11 +427,11 @@ def draw_cloud(screen, x, y, scale=1.0):
     screen.blit(scaled_cloud, scaled_rect.topleft)
 def draw_bird(screen, bird_body):
     bird_position = bird_body.position
+    image1 = bird_body.image
     bird_angle_degrees = math.degrees(bird_body.angle)  # Convert angle to degrees for Pygame
 
     # Rotate the bird image based on the bird's angle
-    rotated_bird_image = pygame.transform.rotate(bird_image,
-                                                 -bird_angle_degrees)  # Rotate image (negative for correct direction)
+    rotated_bird_image = pygame.transform.rotate(image1, -bird_angle_degrees)  # Rotate image (negative for correct direction)
 
     # Update the rectangle to keep the image centered on the bird's position
     rotated_rect = rotated_bird_image.get_rect(center=(bird_position.x-5, bird_position.y))
@@ -443,6 +452,7 @@ def create_bird(x, y, velocity):
     bird_body.bird_launched = False
     bird_body.has_exploded = False
     bird_body.time = 100
+    bird_body.image = bird_image
     space.add(bird_body, bird_shape)
     return bird_body
 def draw_sun(screen):
@@ -525,6 +535,7 @@ def explode(space, bomb_position, radius=100, explosion_force=500):
             direction = direction.normalized()  # Get the unit vector
             force = explosion_force * (1 - distance / radius)
             body.apply_impulse_at_world_point(direction * force, body.position)
+            birds[0].has_exploded = True
 def handle_bird_block_collision(arbiter, space, data):
     """Callback function to handle bird-block collision."""
     global bomb_exploded
@@ -534,7 +545,8 @@ def handle_bird_block_collision(arbiter, space, data):
 
     # Remove the block's body and shape from the space
     if birds[0].velocity.y > velocity_threshold or birds[0].velocity.x > velocity_threshold:
-        if Bird == 2 and not bomb_exploded:
+        if Bird == 2 and not birds[0].has_exploded:
+            print("HELLO")
             global explosion_timer
             explosion_timer = pygame.time.get_ticks()
             bomb_exploded = True
@@ -792,22 +804,26 @@ while running:
     if birds:
         if Bird == 0 and birds:
             birds[0].mass = 1
-            bird_image = red_bird_image
+            for bird in birds:
+                bird.image = red_bird_image
             hit_bird_image = red_hit_image
             bird_fly_image = red_fly_image
         elif Bird == 1 and birds:
             birds[0].mass = 1
-            bird_image = blue_bird_image
+            for bird in birds:
+                bird.image = blue_bird_image
             hit_bird_image = blue_hit_image
             bird_fly_image = blue_fly_image
         elif Bird == 2 and birds:
             birds[0].mass = 5
-            bird_image = bomb_bird_image
+            for bird in birds:
+                bird.image = bomb_bird_image
             hit_bird_image = bomb_hit_1_image
             bird_fly_image = bomb_fly_image
         elif Bird == 3 and birds:
             birds[0].mass = 1
-            bird_image = chuck
+            for bird in birds:
+                bird.image = chuck
             hit_bird_image = chuck_hit
             bird_fly_image = chuck_fly
         # Keep the bird floating until launched
@@ -889,8 +905,7 @@ while running:
             screen.blit(text2, text_rect2)
             screen.blit(text3, text_rect3)
             screen.blit(text4, text_rect4)
-        else:
-            screen.blit(win, win_rect)
+        else: screen.blit(win, win_rect)
 
         # Draw the custom floor
         draw_floor(screen, ground_shape)
@@ -907,34 +922,61 @@ while running:
         current_time = pygame.time.get_ticks()
 
         if birds and Bird == 2 and bomb_exploded and not birds[0].has_exploded:
-            if current_time - explosion_timer >= 100 and birds:
-                print("done")
-                explode(space, birds[0].position)
-                bomb_exploded = False
-                birds[0].has_exploded = True
-                space.remove(birds[0])
-                birds.remove(birds[0])
-            else:
-                bird_image = bomb_hit_1_image
+            print("done")
+            explode(space, birds[0].position)
+            bomb_exploded = False
+
+        for bird in birds:
+            if bird.has_exploded:
+                if bird.time > 98:
+                    print("1")
+                    bird.time = bird.time - 1
+                elif 96 < birds[0].time <= 98:
+                    print("2")
+                    bird.image = explode_1
+                    bird.time = bird.time - 1
+                elif 94 < birds[0].time <= 96:
+                    print("3")
+                    bird.image = explode_2
+                    bird.time = bird.time - 1
+                elif 92 < birds[0].time <= 94:
+                    print("4")
+                    bird.image = explode_3
+                    bird.time = bird.time - 1
+                elif bird.time == 92:
+                    print("opoof")
+                    if birds:
+                        birds.remove(bird)
+                        space.remove(bird)
 
         if birds and Bird == 3 and chuck_power and birds[0].bird_launched:
             chuck_power = False
             bird_image = chuck_fast
             birds[0].velocity = (birds[0].velocity.x*1.5, birds[0].velocity.y)
 
-        if birds and birds[0].bird_launched and birds[0].position.y > 700:
-            if birds[0].time > 0:
+        if birds and birds[0].bird_launched and birds[0].position.y > 700 and not Bird == 2:
+            if birds[0].time > 8:
                 birds[0].time = birds[0].time-1
-            else:
+            elif 6 < birds[0].time <= 8:
+                birds[0].image = poof_1
+                birds[0].time = birds[0].time - 1
+            elif 4 < birds[0].time <= 6:
+                birds[0].image = poof_2
+                birds[0].time = birds[0].time - 1
+            elif 2 < birds[0].time <= 4:
+                birds[0].image = poof_3
+                birds[0].time = birds[0].time - 1
+            elif birds[0].time == 2:
                 if birds:
                     birds.remove(birds[0])
+                    space.remove(birds[0])
+
         # Draw the wooden slingshot with enhanced details
         draw_slingshot(screen)
 
         if birds: draw_rubber_band(screen, birds[0].position, dragging)
         for bird in birds:
-            if not bird.has_exploded:
-                draw_bird(screen, bird)
+            draw_bird(screen, bird)
 
         if blue_bird_draw:
             draw_bird(screen, bird1)
