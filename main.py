@@ -101,8 +101,11 @@ poof_2 = pygame.image.load("Poof2.png")
 poof_3 = pygame.image.load("Poof3.png")
 
 explode_1 = pygame.image.load("Explode1.png")
+explode_1 = pygame.transform.scale(explode_1, (300,300))
 explode_2 = pygame.image.load("Explode2.png")
+explode_2 = pygame.transform.scale(explode_2, (300,300))
 explode_3 = pygame.image.load("Explode3.png")
+explode_3 = pygame.transform.scale(explode_3, (300,300))
 
 bear_button = pygame.Rect( 10, 10, 100, 100)  # Rect for bear button (x, y, width, height)
 bear_img = pygame.image.load('cuteBear.png')  # Use a bear image file here
@@ -168,7 +171,7 @@ def reset_game_state(space, levels, level_num):
             space.remove(pig, pig.shape)
             pig.created = False
     # Reset bird state
-    while len(birds) > 0:
+    while birds:
         birds.remove(birds[0])
 
     bird = create_bird(100, 600, (0, 0))
