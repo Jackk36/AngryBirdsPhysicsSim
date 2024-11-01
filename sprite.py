@@ -23,6 +23,7 @@ pygame.display.flip()
 status = True
 while status:
 
+
     # iterate over the list of Event objects
     # that was returned by pygame.event.get() method.
     for i in pygame.event.get():
