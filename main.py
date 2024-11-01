@@ -4,6 +4,7 @@ import pymunk.pygame_util
 import math
 import random
 import tkinter
+import time
 from tkinter import *
 from tkinter import simpledialog
 
@@ -43,7 +44,6 @@ pygame.init()
 pygame.mixer.init()
 pygame.font.init()
 
-
 pygame.mixer.music.load('music.mp3')
 rock_sound = pygame.mixer.Sound('rock_impact.mp3')
 whoosh = pygame.mixer.Sound('whoosh.wav')
@@ -64,18 +64,36 @@ root.focus_force()
 root.title("Level Select")
 root.geometry("480x320+500+300")  # width x height + x + y
 
-class Bear:
-    def __init__(self, x, y):
-        self.image = pygame.image.load('cuteBear.png')  # Load bear button image
-        self.rect = self.image.get_rect(center=(x, y))
+Bird = 0
 
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
+red_bird_image = pygame.image.load("BirdImage.png")  # Path to your uploaded image
+blue_bird_image = pygame.image.load("BlueGuy.png")  # Path to your uploaded image
+bomb_bird_image = pygame.image.load("BombGuy.png")
+chuck = pygame.image.load("Chuck.png")
 
-    def is_clicked(self, mouse_pos):
-        return self.rect.collidepoint(mouse_pos)
+red_hit_image = pygame.image.load("BirdHit.png")
+blue_hit_image = pygame.image.load("BlueGuyHit.png")
+bomb_hit_1_image = pygame.image.load("BombGuyHit1.png")
+bomb_hit_2_image = pygame.image.load("BombGuyHit2.png")
+chuck_hit = pygame.image.load("ChuckHit.png")
 
-bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdImage.png")  # Path to your uploaded image
+red_fly_image = pygame.image.load("BirdFlying1.png")
+blue_fly_image = pygame.image.load("BlueGuyFly.png")
+bomb_fly_image = pygame.image.load("BombGuyFly.png")
+chuck_fly = pygame.image.load("ChuckFly.png")
+
+chuck_fast = pygame.image.load("ChuckFast.png")
+
+bird_image = red_bird_image
+
+hit_bird_image = red_hit_image
+
+bird_fly_image = red_fly_image
+
+blue_bird_draw = False
+
+chuck_power = False
+
 bird_rect = bird_image.get_rect()
 
 poof_1 = pygame.image.load("Poof1.png")
@@ -93,9 +111,8 @@ bear_button = pygame.Rect( 10, 10, 100, 100)  # Rect for bear button (x, y, widt
 bear_img = pygame.image.load('cuteBear.png')  # Use a bear image file here
 bear_img = pygame.transform.scale(bear_img, (100, 100))  # Scale it to fit the button
 music_playing = False  # Music starts off
-hit_bird_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/BirdHit.png")
 
-cloud_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/cloud.png")
+cloud_image = pygame.image.load("cloud.png")
 cloud_rect = cloud_image.get_rect()  # Get the dimensions of the cloud
 # Cloud initial positions and velocities
 cloud1_pos = [900, 0]  # x, y
@@ -108,20 +125,20 @@ for n in range(5):
     cloudList.append(cloud_pos)
 cloud_speed = 30  # Speed at which the clouds move (pixels per second)
 
-medium_block = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlock.png")
+medium_block = pygame.image.load("MedBlock.png")
 medium_block = pygame.transform.scale(medium_block, (100,50))
-medium_block_hit_1 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlockHit1.png")
+medium_block_hit_1 = pygame.image.load("MedBlockHit1.png")
 medium_block_hit_1 = pygame.transform.scale(medium_block_hit_1, (100,50))
-medium_block_hit_2 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlockHit2.png")
+medium_block_hit_2 = pygame.image.load("MedBlockHit2.png")
 medium_block_hit_2 = pygame.transform.scale(medium_block_hit_2, (100,50))
-medium_block_hit_3 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/""MedBlockHit3.png")
+medium_block_hit_3 = pygame.image.load("MedBlockHit3.png")
 medium_block_hit_3 = pygame.transform.scale(medium_block_hit_3, (100,50))
 block_sprites = [medium_block, medium_block_hit_1, medium_block_hit_2, medium_block_hit_3]
 
-pig_image = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/Pig.png")
-pig_image_hit_1 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/PigHit1.png")
-pig_image_hit_2 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/PigHit2.png")
-pig_image_hit_3 = pygame.image.load("/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/PigHit3.png")
+pig_image = pygame.image.load("Pig.png")
+pig_image_hit_1 = pygame.image.load("PigHit1.png")
+pig_image_hit_2 = pygame.image.load("PigHit2.png")
+pig_image_hit_3 = pygame.image.load("PigHit3.png")
 pig_sprites = [pig_image, pig_image_hit_1, pig_image_hit_2, pig_image_hit_3]
 
 # Set up the space
@@ -133,6 +150,9 @@ max_drag_distance = 100     # Max distance allowed for dragging (circle radius)
 level_num = 0
 medium_block_num = 0
 pig_image_num = 0
+lives = 3
+bomb_exploded = False
+explosion_timer = 0
 
 # Collision types
 BIRD_COLLISION_TYPE = 1
@@ -345,8 +365,8 @@ def on_button_click6():
     load_level(levels, level_num)
     root.destroy()
 
-image = PhotoImage(file="/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/Level1.png") # TODO alter for differnt people
-level_background_image = PhotoImage(file="/Users/kevin_francis/PycharmProjects/AngryBirdsPhysicsSim/LevelBackground.png") # TODO alter for differnt people
+image = PhotoImage(file="Level1.png")
+level_background_image = PhotoImage(file="LevelBackground.png")
 
 label1 = Label( root, image = level_background_image)
 label1.place(x = 0, y = 0)
@@ -377,7 +397,7 @@ ground_body.position = (600, 780)  # Center of the screen horizontally, near the
 
 # Create the rectangular shape for the ground
 ground_shape = pymunk.Poly.create_box(ground_body, (2200, 70))  # Width: 600, Height: 70
-ground_shape.friction = 1.0
+ground_shape.friction = 0.9
 ground_shape.collision_type = GROUND_COLLISION_TYPE
 space.add(ground_body, ground_shape)
 
@@ -421,7 +441,7 @@ def draw_bird(screen, bird_body):
 
     # Blit the rotated image at the updated position
     screen.blit(rotated_bird_image, rotated_rect.topleft)
-def create_bird(x, y):
+def create_bird(x, y, velocity):
     mass = 1
     radius = 15
     inertia = pymunk.moment_for_circle(mass, 0, radius)
@@ -436,7 +456,6 @@ def create_bird(x, y):
     bird_body.has_exploded = False
     bird_body.time = 100
     bird_body.image = bird_image
-    bird_body.velocity = (0,0)
     space.add(bird_body, bird_shape)
     return bird_body
 def draw_sun(screen):
@@ -479,13 +498,13 @@ def draw_slingshot(screen):
     # Add wood grain effect (lines for details)
     pygame.draw.line(screen, shadow_color, (95, 720), (95, 750), 2)  # Grain on the left side of the base
     pygame.draw.line(screen, shadow_color, (105, 720), (105, 750), 2)  # Grain on the right side of the base
-def draw_trajectory(surface, bird_body, drag_vector, steps=10, step_size=0.1):
+def draw_trajectory(surface, bird, drag_vector, steps=10, step_size=0.1):
     """Draws the trajectory of the bird using small dots."""
     # Launch power based on drag
     launch_power_scaled = drag_vector.length / max_drag_distance * launch_power
     initial_velocity = -drag_vector.normalized() * launch_power_scaled * 10  # Calculate launch velocity
 
-    bird_pos = pymunk.Vec2d(bird_body.position.x, bird_body.position.y)  # Get current bird position
+    bird_pos = pymunk.Vec2d(bird.position.x, bird.position.y)  # Get current bird position
 
     for i in range(steps):
         t = step_size * i  # Time step
@@ -504,7 +523,7 @@ def draw_rubber_band(screen, bird_pos, dragging):
     rubber_band_thickness = 8
 
     # Draw the rubber band only if the bird is being dragged
-    if not bird_launched:
+    if not birds[0].bird_launched:
         # Left rubber band
         pygame.draw.line(screen, rubber_band_color, left_band_anchor, bird_pos, rubber_band_thickness)
         #Right rubber band
@@ -522,6 +541,7 @@ def explode(space, bomb_position, radius=100, explosion_force=500):
             birds[0].has_exploded = True
 def handle_bird_block_collision(arbiter, space, data):
     """Callback function to handle bird-block collision."""
+    global bomb_exploded
     block_shape = arbiter.shapes[1]  # The block is the second shape in the collision pair
 
     velocity_threshold = 100  # A threshold velocity to consider the block as falling
@@ -537,10 +557,6 @@ def handle_bird_block_collision(arbiter, space, data):
         if block_shape.body.medium_block_num >= len(block_sprites):
             space.remove(block_shape.body, block_shape)
             block_shape.body.created = False
-    if bird.velocity.y > velocity_threshold or bird.velocity.x > velocity_threshold:
-        block_shape.body.medium_block_num += 1
-        if block_shape.body.medium_block_num >= len(block_sprites):
-            space.remove(block_shape, block_shape.body)
             block_shape.body.is_intact = False
         else:
             block_shape.image = block_sprites[block_shape.body.medium_block_num]
@@ -548,7 +564,7 @@ def handle_bird_block_collision(arbiter, space, data):
     # Collision handler to detect bird hitting block
     def bird_hit_block(arbiter, space, data):
         global bird_image  # Modify global bird_image when the collision occurs
-        bird_image = hit_bird_image  # Change bird's image to the new one
+        bird_image = hit_bird_image# Change bird's image to the new one
         return True  # Return True to process the collision
 
     # Add the collision handler
@@ -565,7 +581,7 @@ def handle_block_ground_collision(arbiter, space, data):
     if block_body.velocity.y > falling_threshold or block_body.velocity.x > falling_threshold:
         block_shape.body.medium_block_num += 1
         if block_body.medium_block_num >= len(block_sprites):
-            space.remove(block_shape, block_shape.body)
+            space.remove(block_body, block_shape)
             block_body.is_intact = False
             block_body.created = False
         else:
@@ -586,7 +602,7 @@ def handle_block_block_collision(arbiter, space, data):
     if block_body_1.velocity.y > falling_threshold or block_body_1.velocity.x > falling_threshold:
         block_body_1.medium_block_num += 1
         if block_body_1.medium_block_num >= len(block_sprites):
-            space.remove(block_body_1)
+            space.remove(block_body_1, block_shape_1)
             block_body_1.is_intact = False
             block_body_1.created = False
         else:
@@ -596,7 +612,7 @@ def handle_block_block_collision(arbiter, space, data):
     elif block_body_2.velocity.y > falling_threshold or block_body_2.velocity.x > falling_threshold:
         block_body_2.medium_block_num += 1
         if block_body_2.medium_block_num >= len(block_sprites):
-            space.remove(block_body_2)
+            space.remove(block_body_2, block_shape_2)
             block_body_2.is_intact = False
             block_body_2.created = False
         else:
@@ -604,13 +620,18 @@ def handle_block_block_collision(arbiter, space, data):
 
     return True  # Continue with the normal collision processing
 def handle_bird_pig_collision(arbiter, space, data):
+    global bomb_exploded
     pig_shape = arbiter.shapes[1]
 
     velocity_threshold = 1  # A threshold velocity to consider the block as falling
 
     # Remove the block's body and shape from the space
-    if bird.velocity.y > velocity_threshold or bird.velocity.x > velocity_threshold:
-        space.remove(pig_shape, pig_shape.body)
+    if birds[0].velocity.y > velocity_threshold or birds[0].velocity.x > velocity_threshold:
+        if Bird == 2 and not bomb_exploded:
+            global explosion_timer
+            explosion_timer = pygame.time.get_ticks()
+            bomb_exploded = True
+        space.remove(pig_shape.body, pig_shape)
         pig_shape.body.dead = True
 
     # Collision handler to detect bird hitting block
@@ -633,7 +654,7 @@ def handle_pig_ground_collision(arbiter, space, data):
     if pig_body.velocity.y > falling_threshold or pig_body.velocity.x > falling_threshold:
         pig_shape.body.pig_image_num += 1
         if pig_body.pig_image_num >= len(pig_sprites):
-            space.remove(pig_shape, pig_shape.body)
+            space.remove(pig_body, pig_shape)
             pig_body.dead = True
         else:
             pig_shape.image = pig_sprites[pig_body.pig_image_num]
@@ -646,7 +667,7 @@ def handle_pig_block_collision(arbiter, space, data):
     block_body = block_shape.body
     pig_body = pig_shape.body
 
-    falling_threshold = 100  # A threshold velocity to consider a block falling
+    falling_threshold = 1  # A threshold velocity to consider a block falling
 
     if block_body.velocity.y > falling_threshold or block_body.velocity.x > falling_threshold:
         block_body.medium_block_num += 1
@@ -660,14 +681,19 @@ def handle_pig_block_collision(arbiter, space, data):
     elif pig_body.velocity.y > falling_threshold or pig_body.velocity.x > falling_threshold:
         pig_body.pig_image_num += 1
         if pig_body.pig_image_num >= len(pig_sprites):
-            space.remove(pig_body)
+            space.remove(pig_body, block_shape)
             pig_body.dead = True
         else:
             pig_body.image = pig_sprites[pig_body.pig_image_num]
 
     return True  # Continue with the normal collision processing
 
-bird = create_bird(*slingshot_pos)
+bird = create_bird(100, 600, (0,0))
+
+bird_num_2 = create_bird(200, 750, (0,0))
+bird_num_3 = create_bird(250, 750, (0,0))
+
+birds = [bird, bird_num_2, bird_num_3]
 
 # Add a collision handler for bird-block collisions
 collision_handler = space.add_collision_handler(BIRD_COLLISION_TYPE, BLOCK_COLLISION_TYPE)
@@ -719,7 +745,6 @@ running = True
 dragging = False
 launch_power = 100
 initial_mouse_pos = None  # Store initial click position
-bird_launched = False  # Track whether the bird has been launched
 while running:
     draw_bear_button()  # Draw the bear button
     for event in pygame.event.get():
@@ -730,8 +755,16 @@ while running:
                 dragging = False
                 launch_power = 100
                 initial_mouse_pos = None  # Store initial click position
-                bird_launched = False  # Track whether the bird has been launched
-                bird.position = slingshot_pos
+                birds[0].bird_launched = False  # Track whether the bird has been launched
+                birds[0].position = slingshot_pos
+            if event.key == pygame.K_1:
+                Bird = 0
+            if event.key == pygame.K_2:
+                Bird = 1
+            if event.key == pygame.K_3:
+                Bird = 2
+            if event.key == pygame.K_4:
+                Bird = 3
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
             if bear_button.collidepoint(event.pos):  # If bear button is clicked
@@ -745,12 +778,18 @@ while running:
                     pygame.mixer.music.play(-1)  # Play the music indefinitely
                 music_playing = not music_playing  # Toggle the music state
 
-            if bird.position.get_distance(mouse_pos) < 20 and not bird_launched:
+            if birds[0].position.get_distance(mouse_pos) < 20 and not birds[0].bird_launched:
                 dragging = True
-                bird.velocity = (0, 0)  # Stop any falling during drag
+                birds[0].velocity = (0, 0)  # Stop any falling during drag
                 initial_mouse_pos = mouse_pos  # Set initial mouse position when dragging starts
+            if birds[0].bird_launched and Bird == 1:
+                blue_bird_draw = True
+                bird1 = create_bird(birds[0].position.x, birds[0].position.y - 50, birds[0].velocity)
+                bird2 = create_bird(birds[0].position.x, birds[0].position.y + 50, birds[0].velocity)
+            if birds[0].bird_launched and Bird == 3:
+                chuck_power = True
         elif event.type == pygame.MOUSEBUTTONUP:
-            if dragging and initial_mouse_pos and not bird_launched:
+            if dragging and initial_mouse_pos and not birds[0].bird_launched:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 current_mouse_pos = pymunk.Vec2d(mouse_x, mouse_y)  # Get the current mouse position
                 drag_vector = current_mouse_pos - initial_mouse_pos  # Calculate the drag vector based on initial click position
@@ -760,9 +799,9 @@ while running:
 
                 # Calculate launch velocity and apply it to the bird
                 launch_velocity = -drag_vector.normalized() * (drag_vector.length / max_drag_distance * launch_power) *10
-                bird.velocity = launch_velocity
+                birds[0].velocity = launch_velocity
                 dragging = False
-                bird_launched = True  # Set bird as launched after release
+                birds[0].bird_launched = True  # Set bird as launched after release
                 initial_mouse_pos = None  # Store initial click position
                 whoosh.play()
                 bird_image = bird_fly_image
