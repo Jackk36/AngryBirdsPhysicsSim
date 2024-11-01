@@ -673,6 +673,7 @@ def handle_pig_block_collision(arbiter, space, data):
         block_body.medium_block_num += 1
         if block_body.medium_block_num >= len(block_sprites):
             space.remove(block_body, block_shape)
+            block_body.created = False
             block_body.is_intact = False
         else:
             block_body.image = block_sprites[block_body.medium_block_num]
@@ -960,28 +961,47 @@ while running:
         if birds and birds[0].bird_launched and birds[0].position.y > 700 and not Bird == 2:
             if birds[0].time > 8:
                 birds[0].time = birds[0].time-1
+                if Bird == 1:
+                    bird1.time = bird1.time - 1
+                    bird2.time = bird2.time - 1
             elif 6 < birds[0].time <= 8:
                 birds[0].image = poof_1
+                bird1.image = poof_1
+                bird2.image = poof_1
                 birds[0].time = birds[0].time - 1
+                if Bird == 1:
+                    bird1.time = bird1.time - 1
+                    bird2.time = bird2.time - 1
             elif 4 < birds[0].time <= 6:
                 birds[0].image = poof_2
+                bird1.image = poof_2
+                bird2.image = poof_2
                 birds[0].time = birds[0].time - 1
+                if Bird == 1:
+                    bird1.time = bird1.time - 1
+                    bird2.time = bird2.time - 1
             elif 2 < birds[0].time <= 4:
                 birds[0].image = poof_3
+                bird1.image = poof_3
+                bird2.image = poof_3
                 birds[0].time = birds[0].time - 1
+                if Bird == 1:
+                    bird1.time = bird1.time - 1
+                    bird2.time = bird2.time - 1
             elif birds[0].time == 2:
                 if birds:
                     birds.remove(birds[0])
                     space.remove(birds[0])
+                    space.remove(bird1)
+                    space.remove(bird2)
 
         # Draw the wooden slingshot with enhanced details
         draw_slingshot(screen)
 
         if birds: draw_rubber_band(screen, birds[0].position, dragging)
-        for bird in birds:
-            draw_bird(screen, bird)
+        for bird in birds: draw_bird(screen, bird)
 
-        if blue_bird_draw:
+        if blue_bird_draw and not bird1.time == 1:
             draw_bird(screen, bird1)
             draw_bird(screen, bird2)
         # Use a copy of the list to avoid issues when removing items
