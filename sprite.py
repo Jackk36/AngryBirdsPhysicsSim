@@ -21,7 +21,8 @@ scrn.blit(imp, (0, 0))
 # paint screen one time
 pygame.display.flip()
 status = True
-while (status):
+while status:
+
 
     # iterate over the list of Event objects
     # that was returned by pygame.event.get() method.

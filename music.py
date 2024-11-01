@@ -7,7 +7,7 @@ pygame.init()
 pygame.mixer.init()
 
 # Load the music and rock sound files
-pygame.mixer.music.load('/sound/music.mp3')
+pygame.mixer.music.load('music.mp3')
 rock_sound = pygame.mixer.Sound('rock_impact.mp3')
 
 pygame.mixer.music.set_volume(1.0)  # Set music volume
@@ -66,17 +66,3 @@ while running:
     pygame.display.flip()  # Update the screen
 
 pygame.quit()
-
-# for block in levels[level_num - 1][:][0]:
-#     if block.is_intact:
-#         draw_blocks(screen, block)
-#     else:
-#         # Play the rock sound once
-#         levels[level_num - 1][0].remove(block)
-# for pig in levels[level_num - 1][:][1]:
-#     if not pig.dead:
-#         draw_pigs(screen, pig)
-#     else:
-#         rock_sound.play()  # Play the rock sound once
-#         levels[level_num - 1][1].remove(pig)
-# pygame.display.flip()
