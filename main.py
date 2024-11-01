@@ -846,7 +846,7 @@ while running:
                 levels[level_num-1][1].remove(pig)
         for block in levels[level_num-1][1]:
             if block.position.x > 1200:
-                space.remove(block)
+                space.remove(block, block.shape)
                 block.created = False
 
         screen.fill((200, 220, 255))  # Blue background (sky)
